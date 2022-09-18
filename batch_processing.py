@@ -17,6 +17,6 @@ for root, dirs, files in os.walk(input_folder):
             k += 1
             print(f'{k} files processed.')
 
-print('Normalization completed.')
+print('Batch processing completed.')
 
 
