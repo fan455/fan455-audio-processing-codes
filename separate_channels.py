@@ -9,3 +9,4 @@ def separate_channels(input_name, input_folder, output_folder, sf_subtype='PCM_1
         au_sep = au[:, i]
         output_path = output_folder + '/' + input_name.replace('.', f'c{i+1}.')
         sf.write(output_path, au_sep, sr, sf_subtype)
+        print(f'Channel {i+1} separated. Written to {output_path}.')
