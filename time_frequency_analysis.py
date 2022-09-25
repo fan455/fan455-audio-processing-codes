@@ -1,5 +1,5 @@
 """
-Audio Time-Frequency Analysis tools based on numpy, scipy and matplotlib.
+Audio Time-Frequency Analysis codes based on numpy, scipy and matplotlib.
 """
 import numpy as np
 from scipy import signal
