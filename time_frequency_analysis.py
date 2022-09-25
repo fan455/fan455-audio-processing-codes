@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     """
     Parameters:
-    au: numpy.ndarray. Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. Framed audio needs to be converted to non-framed audio first using other functions to have the right stft.
+    au: numpy.ndarray. Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. window_idxd audio needs to be converted to non-window_idxd audio first using other functions to have the right stft.
     sr: int. Sample rate of au.
     channel: int. If au has 2 dimensions, which channel to do stft. Defaults to 0 which represents the first channel. 
     output: str. 'm' will return magnitudes array (zero or positive real values). 'm, p' will return two magnitudes and phases arrays. 'complex' will return a complex array as normal. 'r, i' will return two real and imaginary arrays derived from the complex array.
@@ -28,7 +28,7 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     elif au.ndim == 2:
         au = au[:, channel]
     else:
-        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
+        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a window_idxd audio.')
     if nperseg == None:
         nperseg = sr
     f, t, z = signal.stft(au, fs=sr, nperseg=nperseg, noverlap=noverlap, boundary=None)
@@ -48,9 +48,9 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     else:
         raise ValueError('Parameter "output" has to be "m, p", "complex" or "r, i".')
 
-def plot_stft_m(f, t, m, frame=0):
-    time = t[frame]
-    x, y = f, m[:, frame]
+def plot_stft_m(f, t, m, window_idx=0):
+    time = t[window_idx]
+    x, y = f, m[:, window_idx]
     fig, ax = plt.subplots()
     fig.patch.set_facecolor('#D1DDC5')
     ax.patch.set_facecolor('#D1DDC5')
@@ -61,9 +61,9 @@ def plot_stft_m(f, t, m, frame=0):
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
 
-def plot_stft_p(f, t, p, frame=0):
-    time = t[frame]
-    x, y = f, p[:, frame]
+def plot_stft_p(f, t, p, window_idx=0):
+    time = t[window_idx]
+    x, y = f, p[:, window_idx]
     fig, ax = plt.subplots()
     fig.patch.set_facecolor('#D1DDC5')
     ax.patch.set_facecolor('#D1DDC5')
@@ -74,9 +74,9 @@ def plot_stft_p(f, t, p, frame=0):
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
 
-def plot_stft_z(f, t, z, frame=0):
-    time = t[frame]
-    z = z[:, frame]
+def plot_stft_z(f, t, z, window_idx=0):
+    time = t[window_idx]
+    z = z[:, window_idx]
     x, y1, y2 = f, z.real, z.imag
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     ax1.plot(x, y1)
@@ -91,9 +91,9 @@ def plot_stft_z(f, t, z, frame=0):
     ax2.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
 
-def plot_stft_r(f, t, r, frame=0):
-    time = t[frame]
-    x, y = f, r[:, frame]
+def plot_stft_r(f, t, r, window_idx=0):
+    time = t[window_idx]
+    x, y = f, r[:, window_idx]
     fig, ax = plt.subplots()
     fig.patch.set_facecolor('#D1DDC5')
     ax.patch.set_facecolor('#D1DDC5')
@@ -104,9 +104,9 @@ def plot_stft_r(f, t, r, frame=0):
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
 
-def plot_stft_i(f, t, i, frame=0):
-    time = t[frame]
-    x, y = f, i[:, frame]
+def plot_stft_i(f, t, i, window_idx=0):
+    time = t[window_idx]
+    x, y = f, i[:, window_idx]
     fig, ax = plt.subplots()
     fig.patch.set_facecolor('#D1DDC5')
     ax.patch.set_facecolor('#D1DDC5')
