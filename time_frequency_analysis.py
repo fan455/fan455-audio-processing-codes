@@ -5,6 +5,18 @@ import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 
+def psd(au, sr, channel=0, nperseg=None, noverlap=None):
+    if au.ndim == 1:
+        pass
+    elif au.ndim == 2:
+        au = au[:, channel]
+    else:
+        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a win_idxd audio.')
+    if nperseg == None:
+        nperseg = sr
+    f, Pxx = signal.welch(au, fs=sr, nperseg=nperseg, noverlap=noverlap)
+    return f, Pxx
+
 def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     """
     Parameters:
@@ -32,7 +44,6 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     if nperseg == None:
         nperseg = sr
     f, t, z = signal.stft(au, fs=sr, nperseg=nperseg, noverlap=noverlap, boundary=None)
-    f = f.astype(np.int16)
     t = np.around(t, 2)
     if output == 'm':
         m = np.abs(z)
@@ -114,5 +125,18 @@ def plot_stft_i(f, t, i, win_idx=0):
     ax.set_title(f'time = {time}s')
     plt.xlabel('frquency')
     plt.ylabel('imaginary part')
+    ax.grid(color='grey', linewidth='1', linestyle='-.')
+    plt.show()
+
+def plot_psd(f, Pxx):
+    f = f.astype(np.int16)
+    x, y = f, Pxx
+    fig, ax = plt.subplots()
+    fig.patch.set_facecolor('#D1DDC5')
+    ax.patch.set_facecolor('#D1DDC5')
+    ax.plot(x, y)
+    ax.set_title(f'Power Spectral Dessity')
+    plt.xlabel('frquency')
+    plt.ylabel('psd')
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
