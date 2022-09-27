@@ -13,7 +13,7 @@ for root, dirs, files in os.walk(input_folder):
         if file.endswith('.wav'):
             input_path = os.path.join(root, file) 
             output_path = input_path.replace(input_folder, output_folder)
-            xxx(input_path, output_path)
+            xxx.xxx(input_path, output_path)
             k += 1
             print(f'{k} files processed.')
 
