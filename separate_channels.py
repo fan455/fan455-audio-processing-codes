@@ -1,7 +1,7 @@
 import numpy as np
 import soundfile as sf
 
-def separate_channels(input_name, input_folder, output_folder, sf_subtype='PCM_16'):
+def separate_channels(input_name, input_folder, output_folder, sf_subtype='PCM_24'):
     """
     It is better to specify the 'sf_subtype' parameter consistent with the bit depth of the input audio file.
     """
