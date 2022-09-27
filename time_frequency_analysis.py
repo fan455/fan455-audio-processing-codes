@@ -11,7 +11,7 @@ def psd(au, sr, channel=0, nperseg=None, noverlap=None):
     elif au.ndim == 2:
         au = au[:, channel]
     else:
-        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a win_idxd audio.')
+        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
     if nperseg == None:
         nperseg = sr
     f, Pxx = signal.welch(au, fs=sr, nperseg=nperseg, noverlap=noverlap)
@@ -40,7 +40,7 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     elif au.ndim == 2:
         au = au[:, channel]
     else:
-        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a win_idxd audio.')
+        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
     if nperseg == None:
         nperseg = sr
     f, t, z = signal.stft(au, fs=sr, nperseg=nperseg, noverlap=noverlap, boundary=None)
