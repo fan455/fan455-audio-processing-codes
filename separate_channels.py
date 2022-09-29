@@ -1,7 +1,11 @@
 import numpy as np
 
-def separate_2_channels(au):
+def sep2to2(au):
     return au[:, 0], au[:, 1]
 
-def separate_4_channels(au):
+def sep4to4(au):
     return au[:, 0], au[:, 1], au[:, 2], au[:, 3]
+
+def sep4to2(au):
+    return au[:, 0:2], au[:, 2:4]
+
