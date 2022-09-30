@@ -20,7 +20,7 @@ def normalize_mid(au, amp=0.35):
 
 def normalize_mono(au, amp=0.35):
     """
-    Normalize a mono audio.
+    Normalize the peak volume of a mono audio.
     input array, output array, no read or write audio files.
     """
     scale = amp/np.amax(np.abs(au))
