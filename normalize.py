@@ -1,5 +1,5 @@
 """
-A simple python code to normalize the peak volume of the mid channel of a stereo wav file under the normal -3db pan law.
+Normalize mono or stereo audio.
 """
 import numpy as np
 
@@ -11,6 +11,7 @@ def db2amp(db: float): # zero or negative db value.
 
 def normalize_mid(au, amp=0.35):
     """
+    Normalize the peak volume of the mid channel of a stereo wav file under the normal -3db pan law.
     input array, output array, no read or write audio files.
     """
     scale = 2*amp/np.amax(np.abs(np.sum(au, axis=-1)))
@@ -19,6 +20,7 @@ def normalize_mid(au, amp=0.35):
 
 def normalize_mono(au, amp=0.35):
     """
+    Normalize a mono audio.
     input array, output array, no read or write audio files.
     """
     scale = amp/np.amax(np.abs(au))
