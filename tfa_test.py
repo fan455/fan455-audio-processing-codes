@@ -2,7 +2,7 @@ import numpy as np
 import soundfile as sf
 import time_frequency_analysis as tfa
 
-def get_sine_wave(f=440, phase=0, sr=48000, du=1):
+def get_sine_wave(f, phase=0, sr=48000, du=1):
     t = np.arange(0, int(sr*du))/sr
     return np.sin(2*np.pi*f*t + phase)
 
