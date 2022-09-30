@@ -2,7 +2,8 @@ import numpy as np
 
 def trim_leading_silence(au, sr, amp, du, lead_du=None):
     """
-    amp: float. abs(au) <= amp is silence.
+    amp: float. abs(au) <= amp is silence if the duration requirement is met.
+    du: float. Minimum consecutive seconds for low amp values to be recognized as silence.
     lead_du: float. Seconds at the beginning to analyze. If set to None, use the whole audio.
     """
     n = int(sr*du)
@@ -46,4 +47,5 @@ def trim_leading_silence(au, sr, amp, du, lead_du=None):
             #print(f'trimmed {round(trim/sr, 4)} seconds')
             return au[trim:, :]
     else:
-        raise ValueError('Only support mono or stereo audio array input')
+        raise ValueError('Only supports mono or stereo audio array input')
+
