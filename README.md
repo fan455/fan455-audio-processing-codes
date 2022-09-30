@@ -3,4 +3,4 @@ The audio processing codes I wrote for python.
 
 Required python packages: numpy, scipy, matplotlib, soundfile.
 
-IMPORTANT: Please note that the shape of all audio arrays in this repository follow the Soundfile: (number_of_samples, number_of_channels) while some libraries like librosa and resampy uses the reverse shape.
+IMPORTANT: Please note that the shapes of all audio arrays in this repository follow the Soundfile, i.e. (number_of_samples, number_of_channels) while some libraries like librosa and resampy uses the reverse shape.
