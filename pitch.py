@@ -1,4 +1,5 @@
 """
+Musical pitch calculations including note, midi, frequency and cent conversions.
 For pianos' 88 notes only. There're 9 octaves (2 incomplete octaves at both ends), counting from 0.
 """
 
@@ -42,3 +43,20 @@ def note2freq(note_str, middle_c='C4'):
     midi = note2midi(note_str, middle_c=middle_c)
     f = midi2freq(midi)
     return f
+
+def 2f2cent(f1, f2):
+    cent = 1200*np.log2(f2/f1)
+    return cent
+
+def 2midi2cent(midi1, midi2):
+    f1, f2 = midi2freq(midi1), midi2freq(midi2)
+    cent = 2f2cent(f1, f2)
+    return cent
+
+def ratio2cent(ratio):
+    cent = 1200*np.log2(ratio)
+    return cent
+
+def cent2ratio(cent):
+    ratio = np.exp2(cent/1200)
+    return ratio
