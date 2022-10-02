@@ -51,7 +51,7 @@ def freq2cent(f1, f2):
 
 def midi2cent(midi1, midi2):
     f1, f2 = midi2freq(midi1), midi2freq(midi2)
-    cent = 2f2cent(f1, f2)
+    cent = freq2cent(f1, f2)
     return cent
 
 def ratio2cent(ratio):
