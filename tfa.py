@@ -63,7 +63,7 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
 def cent2ratio(cent):
     return np.exp2(cent/1200)
 
-def get_pitch_given(au, sr, channel=0, du=None, given_freq=None, given_cent=50, f_step=None):
+def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, f_step=1):
     if au.ndim == 1:
         au = au.reshape((au.size, 1))
     elif au.ndim == 2:
@@ -76,20 +76,12 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=None, given_cent=50, 
         t_size = int(sr*du)
     au = au[0: t_size]
     t = (np.arange(0, t_size)/sr).reshape((t_size, 1))
-    print(f'given_freq = {given_freq}')
     given_ratio = cent2ratio(given_cent)
-    f_l, f_h = given_freq/given_ratio, given_freq*given_ratio
-    if f_step == None:
-        f_l, f_h = int(f_l), int(f_h)
-        f = np.arange(f_l, f_h+1)
-        print(f'f.shape = {f.shape}')
-        f_size = f.size
-        t = np.broadcast_to(t, (t_size, f_size))
-        print(f't.shape = {t.shape}')
-        m = np.abs(np.average(au*np.exp(-2*np.pi*f*1.0j*t), axis=0))
-        print(f'm.shape = {m.shape}')
-        pitch = f[np.argmax(m)]
-        print(f'pitch = {pitch} Hz')
-        return pitch
-    else:
-        raise ValueError('Sorry, I have not written for non-integar frequency values yet. Will do it later.')
+    f_l, f_h = int(given_freq/given_ratio), int(given_freq*given_ratio) + 1
+    f = np.arange(f_l, f_h+1, f_step)
+    f_size = f.size
+    t = np.broadcast_to(t, (t_size, f_size))
+    m = np.abs(np.average(au*np.exp(-2*np.pi*f*1.0j*t), axis=0))
+    pitch = f[np.argmax(m)]
+    print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, [{f_l}Hz, {f_h}Hz] band and {np.round(f_step, 2)}Hz step.')
+    return pitch
