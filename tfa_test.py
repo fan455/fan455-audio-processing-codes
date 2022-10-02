@@ -9,10 +9,9 @@ def get_sine_wave(f=440, phase=0, sr=48000, du=1):
     t = np.arange(0, int(sr*du))/sr
     return np.sin(2*np.pi*f*t + phase)
 
-au, sr = sf.read('A6v8.wav')
+au, sr = sf.read('audio_input/A6v8.wav')
 
 given_freq = note2freq('A6')
-given_cent = 50
-f_step = 0.5
-pitch = tfa.get_pitch_given(au, sr, channel=0, given_freq=given_freq, given_cent=given_cent, f_step=f_step)
+given_cent, cent_step = 50, 2
+pitch = tfa.get_pitch_given(au, sr, channel=0, given_freq=given_freq, given_cent=given_cent, cent_step=cent_step)
 
