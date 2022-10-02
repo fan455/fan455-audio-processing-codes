@@ -59,15 +59,15 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     else:
         raise ValueError('Parameter "output" has to be "m, p", "complex" or "r, i".')
 
-def get_pitch(au, sr, du, channel=0, given=True, given_pitch=None, given_cent=None):
+def get_pitch(au, sr, du, channel=0, given=True, given_freq=None, given_cent=None):
     """
-    Search around the given pitch within the freq to get the more exact pitch. For piano single note sound.
+    Search around the given frequency within the freq to get the more exact pitch. For piano single note sound.
 
     Parameters:
     given: bool. Search with given pitch or not. This may be needed because pianos' lower notes may have some significant inharmonic frequencies caused by strings' logitudinal vibration.
-    given_pitch: float (Hz). One possible pitch given, usually the standard pitch. 
+    given_freq: float (Hz). One possible pitch given, usually the standard pitch. 
     given_cent: folat (cent). Half of the cent band to search around the given pitch for the index of the frequency with maxinum amplitude.
-    When given is True, both given_pitch and given_cent cannot be None.
+    When given is True, both given_freq and given_cent cannot be None.
     """
     if au.ndim == 1:
         pass
@@ -78,14 +78,14 @@ def get_pitch(au, sr, du, channel=0, given=True, given_pitch=None, given_cent=No
     f, t, m = stft(au, sr)
     m = m[:, 0].reshape(f.size)
     if given:
-        if given_pitch != None and given_cent != None:
-            f_l, f_h = given_pitch/given_cent, given_pitch*given_cent
+        if given_freq != None and given_cent != None:
+            f_l, f_h = given_freq/given_cent, given_freq*given_cent
             f_l_idx, f_h_idx = np.argmin(np.abs(f-f_l)), np.argmin(np.abs(f-f_h))
             f_cut, m_cut = f[f_l_idx: f_h_idx+1], m[f_l_idx: f_h_idx+1]
             pitch = f_cut[np.argmax(m_cut)]
             return pitch
         else:
-            raise ValueError('When given is True, both given_pitch and given_cent cannot be None.')
+            raise ValueError('When given is True, both given_freq and given_cent cannot be None.')
     else:
         pitch = f[np.argmax(m)]
         return pitch
