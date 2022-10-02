@@ -1,5 +1,7 @@
 """
 Separate or combine audio channels
+'sepxtoy' means separating an x-channel audio array into y (x/y)-channel audio arrays.
+'combx' means combining x audio arrays (channels) into 1 audio array.
 """
 import numpy as np
 
@@ -14,3 +16,6 @@ def sep4to2(au):
 
 def comb2(au_L, au_R):
     return np.stack((au_L, au_R), axis=-1)
+
+def comb4(au_1, au_2, au_3, au_4):
+    return np.stack((au_1, au_2, au_3, au_4), axis=-1)
