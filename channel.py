@@ -14,8 +14,8 @@ def sep4to4(au):
 def sep4to2(au):
     return au[:, 0:2], au[:, 2:4]
 
-def comb2(au_L, au_R):
-    return np.stack((au_L, au_R), axis=-1)
+def comb2(au_0, au_1):
+    return np.stack((au_0, au_1), axis=-1)
 
-def comb4(au_1, au_2, au_3, au_4):
-    return np.stack((au_1, au_2, au_3, au_4), axis=-1)
+def comb4(au_0, au_1, au_2, au_3):
+    return np.stack((au_0, au_1, au_2, au_3), axis=-1)
