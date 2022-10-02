@@ -38,7 +38,7 @@ def midi2freq(midi):
     f = 440*np.exp2((midi-69)/12)
     return f
 
-def note2freq(note_str):
-    midi = note2midi(note_str)
+def note2freq(note_str, middle_c='C4'):
+    midi = note2midi(note_str, middle_c=middle_c)
     f = midi2freq(midi)
     return f
