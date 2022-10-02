@@ -1,6 +1,7 @@
 """
 Musical pitch calculations including note, midi, frequency and cent conversions.
 For pianos' 88 notes only. There're 9 octaves (2 incomplete octaves at both ends), counting from 0.
+The frequency calculation follows the standard frequencies of musical notes.
 """
 import numpy as np
 
