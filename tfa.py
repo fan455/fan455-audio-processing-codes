@@ -63,36 +63,33 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
 def cent2ratio(cent):
     return np.exp2(cent/1200)
 
-def get_pitch(au, sr, channel=0, win_idx=0, given=True, given_freq=None, given_cent=None):
-    """
-    Search around the given frequency within the freq to get the more exact pitch. For piano single note sound.
-
-    Parameters:
-    channel: int. If audio is multi-channel, which channel to analyze.
-    win_idx: int. If more than 1 stft window, which window to analyze.
-    given: bool. Search with given frequency or not. This may be needed because pianos' lower notes may have some significant inharmonic frequencies caused by strings' logitudinal vibration.
-    given_freq: float (Hz). One possible pitch given, usually the standard pitch. 
-    given_cent: float (cent). Half of the cent band to search around the given pitch for the index of the frequency with maxinum amplitude.
-    When given is True, both given_freq and given_cent cannot be None.
-    """
+def get_pitch_given(au, sr, channel=0, du=None, given_freq=None, given_cent=50, f_step=None):
     if au.ndim == 1:
-        pass
+        au = au.reshape((au.size, 1))
     elif au.ndim == 2:
-        au = au[:, channel]
+        au = au[:, channel:channel+1]
     else:
-        raise ValueError('au.ndim needs to be 1 or 2.')
-    f, t, m = stft(au, sr)
-    m = m[:, win_idx].reshape(f.size)
-    if given:
-        if given_freq != None and given_cent != None:
-            given_ratio = cent2ratio(given_cent)
-            f_l, f_h = given_freq/given_ratio, given_freq*given_ratio
-            f_l_idx, f_h_idx = np.argmin(np.abs(f-f_l)), np.argmin(np.abs(f-f_h))
-            f_cut, m_cut = f[f_l_idx: f_h_idx+1], m[f_l_idx: f_h_idx+1]
-            pitch = f_cut[np.argmax(m_cut)]
-            return pitch
-        else:
-            raise ValueError('When given is True, both given_freq and given_cent cannot be None.')
+        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
+    if du == None:
+        t_size = sr*(au.size//sr)
     else:
+        t_size = int(sr*du)
+    au = au[0: t_size]
+    t = (np.arange(0, t_size)/sr).reshape((t_size, 1))
+    print(f'given_freq = {given_freq}')
+    given_ratio = cent2ratio(given_cent)
+    f_l, f_h = given_freq/given_ratio, given_freq*given_ratio
+    if f_step == None:
+        f_l, f_h = int(f_l), int(f_h)
+        f = np.arange(f_l, f_h+1)
+        print(f'f.shape = {f.shape}')
+        f_size = f.size
+        t = np.broadcast_to(t, (t_size, f_size))
+        print(f't.shape = {t.shape}')
+        m = np.abs(np.average(au*np.exp(-2*np.pi*f*1.0j*t), axis=0))
+        print(f'm.shape = {m.shape}')
         pitch = f[np.argmax(m)]
+        print(f'pitch = {pitch} Hz')
         return pitch
+    else:
+        raise ValueError('Sorry, I have not written for non-integar frequency values yet. Will do it later.')
