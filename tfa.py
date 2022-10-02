@@ -87,7 +87,6 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, c
         t_size = sr*(au.size//sr)
     else:
         t_size = int(sr*du)
-    print(au.shape)
     au = au[0:t_size, :]
     t = (np.arange(0, t_size)/sr).reshape((t_size, 1))
     f = given_freq*cent2ratio(np.arange(-given_cent, given_cent+1, cent_step))
@@ -104,12 +103,11 @@ def interpolate_pitch(f, num):
     Interpolate a frequency array.
 
     Parameters:
-    f: ndarray (Hz). The input frequency array.
+    f: ndarray (Hz). The input frequency array, strictly increasing.
     num: int. Number of frequencies to interpolate between every 2 adjacent input frequencies.
     """
     size = (num + 1)*f.size - num
-    n = np.arange(0, size)
-    n_f = np.arange(0, size, num+1)
+    n, n_f = np.arange(0, size), np.arange(0, size, num+1)
     cs = CubicSpline(n_f, f)
     f_itp = cs(n)
     return f_itp
