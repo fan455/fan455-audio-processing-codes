@@ -60,6 +60,9 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     else:
         raise ValueError('Parameter "output" has to be "m, p", "complex" or "r, i".')
 
+def cent2ratio(cent):
+    return np.exp2(cent/1200)
+
 def get_pitch(au, sr, channel=0, win_idx=0, given=True, given_freq=None, given_cent=None):
     """
     Search around the given frequency within the freq to get the more exact pitch. For piano single note sound.
@@ -82,7 +85,8 @@ def get_pitch(au, sr, channel=0, win_idx=0, given=True, given_freq=None, given_c
     m = m[:, win_idx].reshape(f.size)
     if given:
         if given_freq != None and given_cent != None:
-            f_l, f_h = given_freq/given_cent, given_freq*given_cent
+            given_ratio = cent2ratio(given_cent)
+            f_l, f_h = given_freq/given_ratio, given_freq*given_ratio
             f_l_idx, f_h_idx = np.argmin(np.abs(f-f_l)), np.argmin(np.abs(f-f_h))
             f_cut, m_cut = f[f_l_idx: f_h_idx+1], m[f_l_idx: f_h_idx+1]
             pitch = f_cut[np.argmax(m_cut)]
