@@ -28,12 +28,9 @@ def idx2midi(note_idx, octave_idx):
     if 21 <= midi <= 108:
         return midi
     else:
-        return 0 # Only the indices of 88 notes will have true corresponding midi, otherwise returns 0.
+        return 0 # Only indices of the 88 notes will have true corresponding midi, otherwise returns 0.
 
 def midi2idx(midi):
-    """
-    For pianos' 88 notes only.
-    """
     a, b = divmod(midi-11, 12)
     return b-1, a # note_idx, octave_idx
 
