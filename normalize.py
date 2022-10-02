@@ -3,12 +3,6 @@ Normalize mono or stereo audio.
 """
 import numpy as np
 
-def amp2db(amp: float): # zero or positive amp value range between 0 and 1.
-    return 20*np.log10(amp)
-
-def db2amp(db: float): # zero or negative db value.
-    return np.power(10, db/20)
-
 def normalize_mid(au, amp=0.35):
     """
     Normalize the peak volume of the mid channel of a stereo wav file under the normal -3db pan law.
