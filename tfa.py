@@ -3,6 +3,7 @@ Audio Time-Frequency Analysis codes based on numpy, scipy and matplotlib.
 """
 import numpy as np
 from scipy import signal
+from scipy.interpolate import CubicSpline
 
 def psd(au, sr, channel=0, nperseg=None, noverlap=None):
     if au.ndim == 1:
@@ -86,7 +87,8 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, c
         t_size = sr*(au.size//sr)
     else:
         t_size = int(sr*du)
-    au = au[0: t_size]
+    print(au.shape)
+    au = au[0:t_size, :]
     t = (np.arange(0, t_size)/sr).reshape((t_size, 1))
     f = given_freq*cent2ratio(np.arange(-given_cent, given_cent+1, cent_step))
     f_size = f.size
@@ -96,3 +98,18 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, c
     pitch = f[np.argmax(m)]
     print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, {round(given_cent, 2)} cent band and {np.round(cent_step, 2)} cent step.')
     return pitch
+
+def interpolate_pitch(f, num):
+    """
+    Interpolate a frequency array.
+
+    Parameters:
+    f: ndarray (Hz). The input frequency array.
+    num: int. Number of frequencies to interpolate between every 2 adjacent input frequencies.
+    """
+    size = (num + 1)*f.size - num
+    n = np.arange(0, size)
+    n_f = np.arange(0, size, num+1)
+    cs = CubicSpline(n_f, f)
+    f_itp = cs(n)
+    return f_itp
