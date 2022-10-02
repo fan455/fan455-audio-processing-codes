@@ -1,3 +1,6 @@
+"""
+Separate or combine audio channels
+"""
 import numpy as np
 
 def sep2to2(au):
