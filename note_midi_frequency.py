@@ -24,12 +24,11 @@ def midi2note(midi, middle_c='C4'):
     return f'{note}{octave}'
 
 def idx2midi(note_idx, octave_idx):
-
     midi = 12 + note_idx + 12*octave_idx
     if 21 <= midi <= 108:
         return midi
     else:
-        return 0
+        return 0 # Only the indices of 88 notes will have true corresponding midi, otherwise returns 0.
 
 def midi2idx(midi):
     """
