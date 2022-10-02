@@ -63,7 +63,19 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
 def cent2ratio(cent):
     return np.exp2(cent/1200)
 
-def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, f_step=1):
+def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, cent_step=1):
+    """
+    Detect the pitch of audio (specifically piano single note) given a pitch, cent band and cent step, using discrete time fourier transform in limited frequency range.
+
+    Parameters:
+    au: ndarray (float between -1 and 1). The input audio.
+    sr: int. Sample rate of audio.
+    channel: int. The index of the audio channel to analyze. Only supports 1-channel analysis.
+    du: None or float (seconds). The duration of audio to be analyzed. If set to None, it will be the maxinum integar seconds available.
+    given_freq: float (Hz).
+    given_cent: positive float (cent). Half of the cent band around the given frequency for pitch detection.
+    cent_step: float (cent). The distance between Fourier transform's frequencies measured in cents.
+    """
     if au.ndim == 1:
         au = au.reshape((au.size, 1))
     elif au.ndim == 2:
@@ -76,12 +88,11 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, f
         t_size = int(sr*du)
     au = au[0: t_size]
     t = (np.arange(0, t_size)/sr).reshape((t_size, 1))
-    given_ratio = cent2ratio(given_cent)
-    f_l, f_h = int(given_freq/given_ratio), int(given_freq*given_ratio) + 1
-    f = np.arange(f_l, f_h+1, f_step)
+    f = given_freq*cent2ratio(np.arange(-given_cent, given_cent+1, cent_step))
     f_size = f.size
+    print(f'f.size = {f_size}')
     t = np.broadcast_to(t, (t_size, f_size))
     m = np.abs(np.average(au*np.exp(-2*np.pi*f*1.0j*t), axis=0))
     pitch = f[np.argmax(m)]
-    print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, [{f_l}Hz, {f_h}Hz] band and {np.round(f_step, 2)}Hz step.')
+    print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, {round(given_cent, 2)} cent band and {np.round(cent_step, 2)} cent step.')
     return pitch
