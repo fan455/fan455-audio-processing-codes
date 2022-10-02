@@ -59,22 +59,6 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     else:
         raise ValueError('Parameter "output" has to be "m, p", "complex" or "r, i".')
 
-def get_midi_frequency(midi):
-    f = 440*np.exp2((midi-69)/12)
-    return f
-
-def 2f2cent(f1, f2):
-    cent = 1200*np.log2(f2/f1)
-    return cent
-
-def ratio2cent(ratio):
-    cent = 1200*np.log2(ratio)
-    return cent
-
-def cent2ratio(cent):
-    ratio = np.exp2(cent/1200)
-    return ratio
-
 def get_pitch(au, sr, du, channel=0, given=True, given_pitch=None, given_cent=None):
     """
     Search around the given pitch within the freq to get the more exact pitch. For piano single note sound.
