@@ -2,9 +2,13 @@ import numpy as np
 
 def trim_leading_silence(au, sr, amp, du, lead_du=None):
     """
-    amp: float. abs(au) <= amp is silence if the duration requirement is met.
-    du: float. Minimum consecutive seconds for low amp values to be recognized as silence.
-    lead_du: float. Seconds at the beginning to analyze. If set to None, use the whole audio.
+    Trim the leading silence of an audio given the maxinum loudness (amp) and mininum duration (du) of silence.
+
+    au: ndarray. Input audio array of 1 or 2 dimensions.
+    sr: int. Sample rate of the input audio.
+    amp: float (between 0 and 1). abs(au) <= amp is silence if the duration requirement is met.
+    du: float (seconds). Minimum consecutive seconds for low amp values to be recognized as silence.
+    lead_du: float (seconds). Seconds at the beginning to analyze. If set to None, use the whole audio.
     """
     n = int(sr*du)
     size = au.shape[0]
@@ -12,10 +16,10 @@ def trim_leading_silence(au, sr, amp, du, lead_du=None):
         lead = size
     else:
         lead = int(sr*lead_du)
+    k = 0
     if au.ndim == 1:
-        bool_mono = np.array(abs(au[0: lead, 0]) - amp > 0) # True is sound. False is silence.
-        k = 0
-        while np.any(bool_mono[k*n: (k+1)*n]) == False:
+        bool_arr = np.array(abs(au[0: lead]) - amp > 0) # True is sound. False is silence. 
+        while np.any(bool_arr[k*n: (k+1)*n]) == False:
             k += 1
             if (k+1)*n > size:
                 raise ValueError('Unable to trim. Probably due to the lack of sound in the lead_du range.')
@@ -27,19 +31,12 @@ def trim_leading_silence(au, sr, amp, du, lead_du=None):
             #print(f'trimmed {round(trim/sr, 4)} seconds')
             return au[trim:]
     elif au.ndim == 2:
-        bool_L = np.array(abs(au[0: lead, 0]) - amp > 0) # True is sound. False is silence.
-        bool_R = np.array(abs(au[0: lead, 1]) - amp > 0)
-        k = 0
-        while np.any(bool_L[k*n: (k+1)*n]) == False:
+        bool_arr = np.array(abs(au[0: lead, :]) - amp > 0) # True is sound. False is silence.
+        while np.any(bool_arr[k*n: (k+1)*n, :]) == False:
             k += 1
             if (k+1)*n > size:
                 raise ValueError('Unable to trim. Probably due to the lack of sound in the lead_du range.')
-        trim_L = k*n
-        k = 0
-        while np.any(bool_R[k*n: (k+1)*n]) == False:
-            k += 1
-        trim_R = k*n
-        trim = min(trim_L, trim_R)
+        trim = k*n
         if trim == 0:
             #print('not trimmed')
             return au
@@ -47,5 +44,4 @@ def trim_leading_silence(au, sr, amp, du, lead_du=None):
             #print(f'trimmed {round(trim/sr, 4)} seconds')
             return au[trim:, :]
     else:
-        raise ValueError('Only supports mono or stereo audio array input')
-
+        raise ValueError('audio needs to have 1 or 2 dimensions. Maybe your audio array is framed?')
