@@ -45,11 +45,11 @@ def note2freq(note_str, middle_c='C4'):
     f = midi2freq(midi)
     return f
 
-def 2f2cent(f1, f2):
+def freq2cent(f1, f2):
     cent = 1200*np.log2(f2/f1)
     return cent
 
-def 2midi2cent(midi1, midi2):
+def midi2cent(midi1, midi2):
     f1, f2 = midi2freq(midi1), midi2freq(midi2)
     cent = 2f2cent(f1, f2)
     return cent
