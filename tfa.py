@@ -58,7 +58,7 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     elif output == 'r, i':
         return f, t, z.real, z.imag
     else:
-        raise ValueError('Parameter "output" has to be "m, p", "complex" or "r, i".')
+        raise ValueError('Parameter "output" has to be "m, p", "z" or "r, i".')
 
 def cent2ratio(cent):
     return np.exp2(cent/1200)
