@@ -64,7 +64,7 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
 def cent2ratio(cent):
     return np.exp2(cent/1200)
 
-def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, cent_step=1):
+def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
     Detect the pitch of audio (specifically piano single note) given a pitch, cent band and cent step, using discrete time fourier transform in limited frequency range.
 
@@ -78,23 +78,25 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=50, c
     cent_step: float (cent). The distance between Fourier transform's frequencies measured in cents.
     """
     if au.ndim == 1:
-        au = au.reshape((au.size, 1))
+        pass
     elif au.ndim == 2:
-        au = au[:, channel:channel+1]
+        au = au[:, channel]
     else:
         raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
     if du == None:
         t_size = sr*(au.size//sr)
     else:
         t_size = int(sr*du)
-    au = au[0:t_size, :]
-    t = (np.arange(0, t_size)/sr).reshape((t_size, 1))
-    f = given_freq*cent2ratio(np.arange(-given_cent, given_cent+1, cent_step))
-    f_size = f.size
-    print(f'f.size = {f_size}')
-    t = np.broadcast_to(t, (t_size, f_size))
-    m = np.abs(np.average(au*np.exp(-2*np.pi*f*1.0j*t), axis=0))
-    pitch = f[np.argmax(m)]
+    au = au[0: t_size]
+    t = np.arange(0, t_size)/sr
+    F = given_freq*cent2ratio(np.arange(-given_cent, given_cent+1, cent_step))
+    F_size = F.size
+    M = np.empty(0)
+    for i in range(0, F_size):
+        f = F[i]
+        m = np.abs(np.average(au*np.exp(-2*np.pi*f*1.0j*t)))
+        M = np.append(M, m)
+    pitch = F[np.argmax(M)]
     print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, {round(given_cent, 2)} cent band and {np.round(cent_step, 2)} cent step.')
     return pitch
 
