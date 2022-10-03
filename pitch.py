@@ -62,3 +62,10 @@ def ratio2cent(ratio):
 def cent2ratio(cent):
     ratio = np.exp2(cent/1200)
     return ratio
+
+def pitch_shift_st(f, st):
+    # pitch shift in semitones (st).
+    return f*cent2ratio(st*100)
+
+def pitch_shift_cent(f, cent):
+    return f*cent2ratio(cent)
