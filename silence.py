@@ -25,7 +25,7 @@ def trim_ls2(au, sr, amp, scale, du, lead_du=None):
                     break
                 else:
                     M1 = np.amax(lead[k*n: (k+1)*n])
-            trim = int((k-0.5)*n)
+            trim = int(k*n)
             #print(f'trimmed {round(trim/sr, 4)} seconds')
             return au[trim:]
     elif au.ndim == 2:
@@ -44,7 +44,7 @@ def trim_ls2(au, sr, amp, scale, du, lead_du=None):
                     break
                 else:
                     M1 = np.amax(lead[k*n: (k+1)*n, :], axis=0)
-            trim = int((k-0.5)*n)
+            trim = int(k*n)
             #print(f'trimmed {round(trim/sr, 4)} seconds')
             return au[trim:, :]
     else:
