@@ -67,7 +67,9 @@ def cent2ratio(cent):
 def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
     Detect the pitch of audio (specifically piano single note) given a pitch, cent band and cent step, using discrete time fourier transform in limited frequency range.
-
+    The computation will be a bit slow since it does not use FFT, but it's way more accurate than scipy.signal.stft in terms of frequency resolution. 
+    I've ensured the cpu and memory pressure won't be high using for-loop instead of 2d array.
+    
     Parameters:
     au: ndarray (float between -1 and 1). The input audio.
     sr: int. Sample rate of audio.
@@ -113,3 +115,12 @@ def interpolate_pitch(f, num):
     cs = CubicSpline(n_f, f)
     f_itp = cs(n)
     return f_itp
+
+def interpolate_pitch_midi(f, Midi_f, Midi):
+    """
+    f: ndarray (Hz). The input frequency array, strictly increasing.
+    Midi_f: ndarray. The midi array corresponding to the f array.
+    Midi: ndarray. The midi array to apply interpolation.
+    """
+    cs = CubicSpline(Midi_f, f)
+    return cs(Midi)
