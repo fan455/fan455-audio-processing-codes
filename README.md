@@ -1,5 +1,5 @@
 # fan455-audio-processing-codes
-The audio processing codes I wrote for python.
+The audio processing codes I wrote for python. Special thanks to the authors of the python libraries and github repositories I've used. I've referred to them in the corresponding codes. 
 
 Required python libraries: numpy, scipy, matplotlib, soundfile.
 
