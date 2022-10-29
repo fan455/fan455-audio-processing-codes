@@ -1,14 +1,20 @@
 """
-The LUFS calculations here are all from:
+The LUFS calculations here are all based on:
 ITU documentation: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-4-201510-I!!PDF-E.pdf
 EBU documentation: https://tech.ebu.ch/docs/tech/tech3341.pdf
 pyloudnorm by csteinmetz1: https://github.com/csteinmetz1/pyloudnorm
 loudness.py by BrechtDeMan: https://github.com/BrechtDeMan/loudness.py
 
-I just rewrote some codes and added a momentary loudness calculation for more convenient batch processing of audio files.
+I just rewrote some codes and added a momentary loudness calculation for more convinent batch processing of audio files.
 """
 import numpy as np
 from scipy import signal
+
+def amp2db(amp: float): # zero or positive amp value range between 0 and 1.
+    return 20*np.log10(amp)
+
+def db2amp(db: float): # zero or negative db value.
+    return np.power(10, db/20)
 
 def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True):
     """
@@ -233,11 +239,9 @@ def norm_Mlufs(au, sr, target=-18.0):
     au *= db2amp(target - get_Mlufs(au, sr))
     return au
 
-def amp2db(amp: float): # zero or positive amp value range between 0 and 1.
-    return 20*np.log10(amp)
-
-def db2amp(db: float): # zero or negative db value.
-    return np.power(10, db/20)
+def check_clipping(au):
+    if np.amax(np.abs(au)) >= 1:
+        raise ValueError('Clipping has occurred.')
 
 def print_peak(au):
     au_abs = np.abs(au)
