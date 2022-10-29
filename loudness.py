@@ -5,7 +5,7 @@ EBU documentation: https://tech.ebu.ch/docs/tech/tech3341.pdf
 pyloudnorm by csteinmetz1: https://github.com/csteinmetz1/pyloudnorm
 loudness.py by BrechtDeMan: https://github.com/BrechtDeMan/loudness.py
 
-I just rewrote some codes and added a momentary loudness calculation for more convinent batch processing of audio files.
+I just rewrote some codes and added a momentary loudness calculation for more convenient batch processing of audio files.
 """
 import numpy as np
 from scipy import signal
