@@ -1,5 +1,5 @@
 """
-The LUFS calculations here are all based on:
+The LUFS calculations here are all from:
 ITU documentation: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-4-201510-I!!PDF-E.pdf
 EBU documentation: https://tech.ebu.ch/docs/tech/tech3341.pdf
 pyloudnorm by csteinmetz1: https://github.com/csteinmetz1/pyloudnorm
