@@ -1,11 +1,16 @@
-"""
-The LUFS calculations here are all based on:
-ITU documentation: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-4-201510-I!!PDF-E.pdf
-EBU documentation: https://tech.ebu.ch/docs/tech/tech3341.pdf
-pyloudnorm by csteinmetz1: https://github.com/csteinmetz1/pyloudnorm
-loudness.py by BrechtDeMan: https://github.com/BrechtDeMan/loudness.py
-Special thanks to these authors. I just rewrote some codes to enable short-term and momentary loudness calculations for more convinent batch processing of audio files. True peak algorithm is not included here.
-"""
+# Audio loudness calculation and normalization.
+# The LUFS calculations here are all based on:
+# ITU documentation: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-4-201510-I!!PDF-E.pdf
+# EBU documentation: https://tech.ebu.ch/docs/tech/tech3341.pdf
+# pyloudnorm by csteinmetz1: https://github.com/csteinmetz1/pyloudnorm
+# loudness.py by BrechtDeMan: https://github.com/BrechtDeMan/loudness.py
+# Special thanks to these authors!
+# I just rewrote some codes to enable short-term and momentary loudness calculations and normalizations for more convinent batch processing of audio files.
+# True peak algorithm has not been implemented here.
+# To get the integrated lufs, use the 'get_Ilufs()' function. To get the short-term or momentary lufs, use the 'get_Mlufs()' function.
+# To normalize the integrated lufs, use the 'norm_Ilufs()' function. To get the short-term or momentary lufs, use the 'norm_Mlufs()' function.
+# Both mono and stereo input audio arrays with amplitudes between -1 and 1 are supported.
+
 import numpy as np
 from scipy import signal
 
@@ -163,8 +168,8 @@ def get_Mlufs(au, sr, win=0.4, overlap=0.75):
     Get the maxinum momentary lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
     win: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
     overlap: float, proportion. Proportion of overlapping between windows.
-    Only works for mono or stereo audio because I didn't calculate the different weights (only sum) for the 5-channel input.
-    You can modify the return np.amax(Mlufs) to Mlufs so you can get the full Mlufs array corresponding to the windowed audio.
+    Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
+    You can modify the return 'np.amax(Mlufs)' to 'Mlufs' so you can get the full Mlufs array corresponding to the windowed audio.
     """
     step = int(sr*win)
     hop = int(step*(1-overlap))
@@ -175,25 +180,21 @@ def get_Mlufs(au, sr, win=0.4, overlap=0.75):
         q3 = step - hop - q2
         if q3 > 0:
             au = np.append(au, np.zeros((q3, au.shape[-1])), axis=0)
-        elif q3 < 0:
-            raise ValueError('q3 < 0')
         for i in range(0, q1):
             au_f = au[i*hop: i*hop+step, :]
             au_f = prefilter_Kw(au_f, sr, d0, c0, d1, c1)
-            lufs = get_lufs_multi(au_f, sr)
-            Mlufs = np.append(Mlufs, lufs)
+            mlufs = get_lufs_multi(au_f, sr)
+            Mlufs = np.append(Mlufs, mlufs)
     elif au.ndim == 1:
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
         if q3 > 0:
             au = np.append(au, np.zeros(q3), axis=0)
-        elif q3 < 0:
-            raise ValueError('q3 < 0')
         for i in range(0, q1):
             au_f = au[i*hop: i*hop+step]
             au_f = prefilter_Kw(au_f, sr, d0, c0, d1, c1)
-            lufs = get_lufs_mono(au_f, sr)
-            Mlufs = np.append(Mlufs, lufs)
+            mlufs = get_lufs_mono(au_f, sr)
+            Mlufs = np.append(Mlufs, mlufs)
     else:
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
     return np.amax(Mlufs)
@@ -201,9 +202,9 @@ def get_Mlufs(au, sr, win=0.4, overlap=0.75):
 def get_Ilufs(au, sr, win=0.4, overlap=0.75):
     """
     Get the integrated lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
-    win: float, seconds. Time length of each window.
+    win: float, seconds. Time length of each window. It means the same as 'gating' in the ITU doc.
     overlap: float, proportion. Proportion of overlapping between windows.
-    Only works for mono or stereo audio because I didn't calculate the different weights (only sum) for the 5-channel input.
+    Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
     """
     step = int(sr*win)
     hop = int(step*(1-overlap))
@@ -214,9 +215,7 @@ def get_Ilufs(au, sr, win=0.4, overlap=0.75):
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
         if q3 > 0:
-            au = np.append(au, np.zeros((q3, nchannel)), axis=0)
-        elif q3 < 0:
-            raise ValueError('q3 < 0')       
+            au = np.append(au, np.zeros((q3, nchannel)), axis=0)       
         for i in range(0, q1):
             au_f = au[i*hop: i*hop+step, :]
             au_f = prefilter_Kw(au_f, sr, d0, c0, d1, c1)
@@ -228,8 +227,6 @@ def get_Ilufs(au, sr, win=0.4, overlap=0.75):
         q3 = step - hop - q2
         if q3 > 0:
             au = np.append(au, np.zeros(q3), axis=0)
-        elif q3 < 0:
-            raise ValueError('q3 < 0')
         for i in range(0, q1):
             au_f = au[i*hop: i*hop+step]
             au_f = prefilter_Kw(au_f, sr, d0, c0, d1, c1)
