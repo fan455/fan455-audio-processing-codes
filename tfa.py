@@ -7,9 +7,15 @@ from scipy.interpolate import CubicSpline
 
 def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
     """
+    Parameters
+    au: ndarray. Needs to have shape mono (samples, ) or multi-channel (samples, channels)
+    sr: float, Hz. Sample rate of input audio array.
     T: float, seconds. Time length of each window.
     overlap: float, proportion. Proportion of overlapping between windows.
     win: str. The window to apply to every frame.
+
+    Returns
+    au_f: ndarray. Framed audio with shape mono (window_num, samples) or multi-channel (window_num, samples, channels).
     """
     step = int(sr*T)
     hop = int(step*(1-overlap))
