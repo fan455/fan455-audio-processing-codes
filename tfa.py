@@ -8,17 +8,16 @@ from scipy.interpolate import CubicSpline
 def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
     """
     Parameters
-    au: ndarray. Needs to have shape mono (samples, ) or multi-channel (samples, channels)
+    au: ndarray. Needs to have mono shape (samples_num, ) or multi-channel shape (samples_num, channels_num)
     sr: float, Hz. Sample rate of input audio array.
     T: float, seconds. Time length of each window.
     overlap: float, proportion. Proportion of overlapping between windows.
     win: str. The window to apply to every frame.
 
     Returns
-    au_f: ndarray. Framed audio with shape mono (window_num, samples) or multi-channel (window_num, samples, channels).
+    au_f: ndarray. Framed audio with mono shape (window_num, samples) or multi-channel shape (window_num, samples_num, channels_num).
     """
-    step = int(sr*T)
-    hop = int(step*(1-overlap))
+    step, hop = int(sr*T), int(sr*T*(1-overlap))
     if au.ndim == 2:
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
@@ -62,25 +61,24 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
     else:
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
 
-def psd(au, sr, channel=0, T=1.0, overlap=0.5):
-    nperseg = int(sr*T)
-    noverlap = int(nperseg*overlap)
-    if au.ndim == 1:
-        pass
-    elif au.ndim == 2:
-        au = au[:, channel]
-    else:
-        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
-    f, Pxx = signal.welch(au, fs=sr, nperseg=nperseg, noverlap=noverlap)
+def psd(au, sr, channel=None, T=1.0, overlap=0.5):
+    if channel != None:
+        if au.ndim == 2:
+            au = au[:, channel]
+        elif au.ndim == 1:
+            pass
+        else:
+            raise ValueError('The input audio array has no dimension, or more than 2 dimensions which means it may be a framed audio.')
+    f, Pxx = signal.welch(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), axis=0)
     return f, Pxx
 
-def stft(au, sr, channel=0, output='m', T=1.0, overlap=0.5):
+def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
     """
     Parameters:
     au: numpy.ndarray. Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. win_idxd audio needs to be converted to non-win_idxd audio first using other functions to have the right stft.
     sr: int. Sample rate of au.
-    channel: int. If au has 2 dimensions, which channel to do stft. Defaults to 0 which represents the first channel. 
-    output: str. 'm' will return magnitudes array (zero or positive real values). 'm, p' will return two magnitudes and phases arrays. 'z' will return a complex array as scipy. 'r, i' will return two real and imaginary arrays derived from the complex array.
+    channel: int. If au has 2 dimensions, which channel to do stft. 0 represents the first channel. None will stft all the channels sepatately.
+    output: str. 'm' will return a magnitudes array (zero or positive real values). 'm, p' will return two magnitudes and phases arrays. 'z' will return a complex array, the same as scipy. 'r, i' will return two real and imaginary arrays derived from the complex array.
     T: float, seconds. Time length of a each window. 
     overlap: float between 0 and 1. Overlap proportion between each two adjacent windows. 
     
@@ -92,15 +90,14 @@ def stft(au, sr, channel=0, output='m', T=1.0, overlap=0.5):
     z: if output='z'.
     z.real, z.imag: if output='r, i'.
     """
-    nperseg = int(sr*T)
-    noverlap = int(nperseg*overlap)
-    if au.ndim == 1:
-        pass
-    elif au.ndim == 2:
-        au = au[:, channel]
-    else:
-        raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
-    f, t, z = signal.stft(au, fs=sr, nperseg=nperseg, noverlap=noverlap, boundary=None)
+    if channel != None:
+        if au.ndim == 2:
+            au = au[:, channel]
+        elif au.ndim == 1:
+            pass
+        else:
+            raise ValueError('The input audio array has no dimension, or more than 2 dimensions which means it may be a framed audio.')
+    f, t, z = signal.stft(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None, axis=0)
     t = np.around(t, 2)
     if output == 'm':
         m = np.abs(z)
@@ -122,17 +119,17 @@ def cent2ratio(cent):
 def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
     Detect the pitch of audio (specifically piano single note) given a pitch, cent band and cent step, using discrete time fourier transform in limited frequency range.
-    The computation will be a bit slow since it does not use FFT, but it's way more accurate than scipy.signal.stft in terms of frequency resolution. 
-    I've ensured the cpu and memory pressure won't be high using for-loop instead of 2d array.
+    The computation will be quite slow since it does not use FFT, but it's much more accurate than scipy.signal.stft in terms of frequency resolution. 
+    I've ensured the cpu and memory pressure won't be high by using for-loop.
     
     Parameters:
     au: ndarray (float between -1 and 1). The input audio.
     sr: int. Sample rate of audio.
-    channel: int. The index of the audio channel to analyze. Only supports 1-channel analysis.
+    channel: int. The index of the audio channel to analyze. Only supports 1-channel analysis. None (using all channels) is not supported.
     du: None or float (seconds). The duration of audio to be analyzed. If set to None, it will be the maxinum integar seconds available.
     given_freq: float (Hz).
     given_cent: positive float (cent). Half of the cent band around the given frequency for pitch detection.
-    cent_step: float (cent). The distance between Fourier transform's frequencies measured in cents.
+    cent_step: float (cent). The distance between Fourier transform's frequencies measured in cents, i.e. the resolution of frequencies.
     """
     if au.ndim == 1:
         pass
@@ -160,8 +157,7 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, 
 def interpolate_pitch(f, num):
     """
     Interpolate a frequency array.
-
-    Parameters:
+    
     f: ndarray (Hz). The input frequency array, strictly increasing.
     num: int. Number of frequencies to interpolate between every 2 adjacent input frequencies.
     """
@@ -173,6 +169,8 @@ def interpolate_pitch(f, num):
 
 def interpolate_pitch_midi(f, Midi_f, Midi):
     """
+    Interpolate a frequency array given its midi array and the target midi array.
+
     f: ndarray (Hz). The input frequency array, strictly increasing.
     Midi_f: ndarray. The midi array corresponding to the f array.
     Midi: ndarray. The midi array to apply interpolation.
