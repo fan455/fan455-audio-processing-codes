@@ -8,7 +8,7 @@
 # I just rewrote some codes to enable short-term and momentary loudness calculations and normalizations for more convinent batch processing of audio files.
 # True peak algorithm has not been implemented here.
 # To get the integrated lufs, use the 'get_Ilufs()' function. To get the short-term or momentary lufs, use the 'get_Mlufs()' function.
-# To normalize the integrated lufs, use the 'norm_Ilufs()' function. To get the short-term or momentary lufs, use the 'norm_Mlufs()' function.
+# To normalize the integrated lufs, use the 'norm_Ilufs()' function. To normalize the short-term or momentary lufs, use the 'norm_Mlufs()' function.
 # Both mono and stereo input audio arrays with amplitudes between -1 and 1 are supported.
 
 import numpy as np
