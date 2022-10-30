@@ -62,27 +62,27 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
     else:
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
 
-def psd(au, sr, channel=0, nperseg=None, noverlap=None):
+def psd(au, sr, channel=0, T=1.0, overlap=0.5):
+    nperseg = int(sr*T)
+    noverlap = int(nperseg*overlap)
     if au.ndim == 1:
         pass
     elif au.ndim == 2:
         au = au[:, channel]
     else:
         raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
-    if nperseg == None:
-        nperseg = sr
     f, Pxx = signal.welch(au, fs=sr, nperseg=nperseg, noverlap=noverlap)
     return f, Pxx
 
-def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
+def stft(au, sr, channel=0, output='m', T=1.0, overlap=0.5):
     """
     Parameters:
     au: numpy.ndarray. Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. win_idxd audio needs to be converted to non-win_idxd audio first using other functions to have the right stft.
     sr: int. Sample rate of au.
     channel: int. If au has 2 dimensions, which channel to do stft. Defaults to 0 which represents the first channel. 
     output: str. 'm' will return magnitudes array (zero or positive real values). 'm, p' will return two magnitudes and phases arrays. 'z' will return a complex array as scipy. 'r, i' will return two real and imaginary arrays derived from the complex array.
-    nperseg: None or int. As scipy.signal.stft. None will use the sample rate, int is as scipy.signal.stft.
-    noverlap: None or int. As scipy.signal.stft. None will use half of nperseg.
+    T: float, seconds. Time length of a each window. 
+    overlap: float between 0 and 1. Overlap proportion between each two adjacent windows. 
     
     Returns:
     f: as scipy.signal.stft returns.
@@ -92,16 +92,14 @@ def stft(au, sr, channel=0, output='m', nperseg=None, noverlap=0):
     z: if output='z'.
     z.real, z.imag: if output='r, i'.
     """
+    nperseg = int(sr*T)
+    noverlap = int(nperseg*overlap)
     if au.ndim == 1:
         pass
     elif au.ndim == 2:
         au = au[:, channel]
     else:
         raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
-    if nperseg == None:
-        nperseg = sr
-    if noverlap == None:
-        noverlap = nperseg/2
     f, t, z = signal.stft(au, fs=sr, nperseg=nperseg, noverlap=noverlap, boundary=None)
     t = np.around(t, 2)
     if output == 'm':
