@@ -163,15 +163,15 @@ def get_lufs_multi(au, sr):
     lufs = -0.691 + 10*np.log10(np.sum(np.average(np.square(au), axis=0)))
     return lufs
 
-def get_Mlufs(au, sr, win=0.4, overlap=0.75):
+def get_Mlufs(au, sr, T=0.4, overlap=0.75):
     """
     Get the maxinum momentary lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
-    win: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
+    T: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
     overlap: float, proportion. Proportion of overlapping between windows.
     Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
     You can modify the return 'np.amax(Mlufs)' to 'Mlufs' so you can get the full Mlufs array corresponding to the windowed audio.
     """
-    step = int(sr*win)
+    step = int(sr*T)
     hop = int(step*(1-overlap))
     Mlufs = np.empty(0)
     d0, c0, d1, c1 = get_prefilter_coeff_Kw2(sr)
@@ -199,14 +199,14 @@ def get_Mlufs(au, sr, win=0.4, overlap=0.75):
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
     return np.amax(Mlufs)
 
-def get_Ilufs(au, sr, win=0.4, overlap=0.75):
+def get_Ilufs(au, sr, T=0.4, overlap=0.75):
     """
     Get the integrated lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
-    win: float, seconds. Time length of each window. It means the same as 'gating' in the ITU doc.
+    T: float, seconds. Time length of each window. It means the same as 'gating' in the ITU doc.
     overlap: float, proportion. Proportion of overlapping between windows.
     Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
     """
-    step = int(sr*win)
+    step = int(sr*T)
     hop = int(step*(1-overlap))
     Lk, Z = np.empty(0), np.empty(0)
     d0, c0, d1, c1 = get_prefilter_coeff_Kw2(sr)
