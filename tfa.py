@@ -5,6 +5,57 @@ import numpy as np
 from scipy import signal
 from scipy.interpolate import CubicSpline
 
+def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
+    """
+    T: float, seconds. Time length of each window.
+    overlap: float, proportion. Proportion of overlapping between windows. 
+    """
+    step = int(sr*T)
+    hop = int(step*(1-overlap)) #print(f'step={step}, hop={hop}')
+    if au.ndim == 2:
+        q1, q2 = divmod(au.shape[0], hop)
+        q3 = step - hop - q2
+        if q3 > 0:
+            au = np.append(au, np.zeros((q3, au.shape[-1])), axis=0)
+        elif q3 < 0:
+            raise ValueError('q3 < 0')
+        au = au.reshape((1, au.shape[0], au.shape[1]))
+        au_f = au[:, 0: step, :]
+        for i in range(1, q1):
+            au_f = np.append(au_f, au[:, i*hop: i*hop+step, :], axis=0)
+        if win == 'rectangular':
+            pass
+        elif win == 'hanning':
+            au_f *= np.broadcast_to(np.hanning(step).reshape((1, step, 1)), au_f.shape)
+        elif win == 'hamming':
+            au_f *= np.broadcast_to(np.hamming(step).reshape((1, step, 1)), au_f.shape)
+        else:
+            raise ValueError(f'window {win} is not supported.')
+        return au_f
+    elif au.ndim == 1:
+        q1, q2 = divmod(au.shape[0], hop)
+        q3 = step - hop - q2
+        if q3 > 0:
+            au = np.append(au, np.zeros(q3), axis=0)
+        elif q3 < 0:
+            raise ValueError('q3 < 0')
+        au = au.reshape((1, au.shape[0]))
+        au_f = au[:, 0: step]
+        for i in range(1, q1):
+            au_f = np.append(au_f, au[:, i*hop: i*hop+step], axis=0)
+        if win == 'rectangular':
+            pass
+        elif win == 'hanning':
+            au_f *= np.broadcast_to(np.hanning(step).reshape((1, step)), au_f.shape)
+        elif win == 'hamming':
+            au_f *= np.broadcast_to(np.hamming(step).reshape((1, step)), au_f.shape)
+        else:
+            raise ValueError(f'window {win} is not supported.')
+        return au_f
+    else:
+        raise ValueError(f'au.ndim = {au.ndim} is not supported.')
+
+
 def psd(au, sr, channel=0, nperseg=None, noverlap=None):
     if au.ndim == 1:
         pass
