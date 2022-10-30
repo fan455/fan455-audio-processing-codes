@@ -32,9 +32,9 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
         if win == 'rectangular':
             pass
         elif win == 'hanning':
-            au_f *= np.broadcast_to(np.hanning(step).reshape((1, step, 1)), au_f.shape)
+            au_f *= np.hanning(step).reshape((1, step, 1))
         elif win == 'hamming':
-            au_f *= np.broadcast_to(np.hamming(step).reshape((1, step, 1)), au_f.shape)
+            au_f *= np.hamming(step).reshape((1, step, 1))
         else:
             raise ValueError(f'window "{win}" is not supported.')
         return au_f
@@ -52,9 +52,9 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
         if win == 'rectangular':
             pass
         elif win == 'hanning':
-            au_f *= np.broadcast_to(np.hanning(step).reshape((1, step)), au_f.shape)
+            au_f *= np.hanning(step).reshape((1, step))
         elif win == 'hamming':
-            au_f *= np.broadcast_to(np.hamming(step).reshape((1, step)), au_f.shape)
+            au_f *= np.hamming(step).reshape((1, step))
         else:
             raise ValueError(f'window "{win}" is not supported.')
         return au_f
