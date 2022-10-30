@@ -8,10 +8,11 @@ from scipy.interpolate import CubicSpline
 def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
     """
     T: float, seconds. Time length of each window.
-    overlap: float, proportion. Proportion of overlapping between windows. 
+    overlap: float, proportion. Proportion of overlapping between windows.
+    win: str. The window to apply to every frame.
     """
     step = int(sr*T)
-    hop = int(step*(1-overlap)) #print(f'step={step}, hop={hop}')
+    hop = int(step*(1-overlap))
     if au.ndim == 2:
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
@@ -30,7 +31,7 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
         elif win == 'hamming':
             au_f *= np.broadcast_to(np.hamming(step).reshape((1, step, 1)), au_f.shape)
         else:
-            raise ValueError(f'window {win} is not supported.')
+            raise ValueError(f'window "{win}" is not supported.')
         return au_f
     elif au.ndim == 1:
         q1, q2 = divmod(au.shape[0], hop)
@@ -50,11 +51,10 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
         elif win == 'hamming':
             au_f *= np.broadcast_to(np.hamming(step).reshape((1, step)), au_f.shape)
         else:
-            raise ValueError(f'window {win} is not supported.')
+            raise ValueError(f'window "{win}" is not supported.')
         return au_f
     else:
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
-
 
 def psd(au, sr, channel=0, nperseg=None, noverlap=None):
     if au.ndim == 1:
