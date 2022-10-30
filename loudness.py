@@ -4,7 +4,7 @@ ITU documentation: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-4-2
 EBU documentation: https://tech.ebu.ch/docs/tech/tech3341.pdf
 pyloudnorm by csteinmetz1: https://github.com/csteinmetz1/pyloudnorm
 loudness.py by BrechtDeMan: https://github.com/BrechtDeMan/loudness.py
-Special thanks to these authors. I just rewrote some codes and added short-term and momentary loudness calculations for more convinent batch processing of audio files. True peak algorithm is not included here.
+Special thanks to these authors. I just rewrote some codes to enable short-term and momentary loudness calculations for more convinent batch processing of audio files. True peak algorithm is not included here.
 """
 import numpy as np
 from scipy import signal
