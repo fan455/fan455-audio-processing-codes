@@ -4,8 +4,7 @@ ITU documentation: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-4-2
 EBU documentation: https://tech.ebu.ch/docs/tech/tech3341.pdf
 pyloudnorm by csteinmetz1: https://github.com/csteinmetz1/pyloudnorm
 loudness.py by BrechtDeMan: https://github.com/BrechtDeMan/loudness.py
-
-I just rewrote some codes and added a momentary loudness calculation for more convinent batch processing of audio files.
+Special thanks to these authors. I just rewrote some codes and added short-term and momentary loudness calculations for more convinent batch processing of audio files. True peak algorithm is not included here.
 """
 import numpy as np
 from scipy import signal
@@ -32,9 +31,9 @@ def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True):
     else:
         return y
 
-def get_prefilter_coff(sr, G, Q, fc, filter_type, passband_gain=1.0):
-    """ 
-    Parameters
+def get_prefilter_coeff(sr, G, Q, fc, filter_type, passband_gain=1.0):
+    """
+    coefficients calculation by csteinmetz1.
     sr: float. Sampling rate in Hz.
     G : float. Gain of the filter in dB.
     Q : float. Q of the filter.
@@ -67,7 +66,10 @@ def get_prefilter_coff(sr, G, Q, fc, filter_type, passband_gain=1.0):
         a2 =   1 - alpha / A
     return np.array([b0, b1, b2])/a0, np.array([a0, a1, a2])/a0
 
-def get_prefilter_coff_Kw0(sr=48000):
+def get_prefilter_coeff_Kw0(sr=48000):
+    """
+    coefficients in the original ITU documentation.
+    """
     if sr == 48000:
         a0 = 1
         a1 = -1.69065929318241
@@ -86,15 +88,16 @@ def get_prefilter_coff_Kw0(sr=48000):
         d1, c1 = np.array([b0,b1,b2]), np.array([a0,a1,a2])
         return d0, c0, d1, c1
     else:
-        raise ValueError(f'Sample rate {sr} is not supported.')
+        raise ValueError(f'Sample rate {sr} is not supported in this function.')
 
-def get_prefilter_coff_Kw1(sr):
-    d0, c0 = get_prefilter_coff(sr, 4.0, 1/np.sqrt(2), 1500.0, 'high_shelf')
-    d1, c1 = get_prefilter_coff(sr, 0.0, 0.5, 38.0, 'high_pass')
+def get_prefilter_coeff_Kw1(sr):
+    # coefficients calculation by csteinmetz1.
+    d0, c0 = get_prefilter_coeff(sr, 4.0, 1/np.sqrt(2), 1500.0, 'high_shelf')
+    d1, c1 = get_prefilter_coeff(sr, 0.0, 0.5, 38.0, 'high_pass')
     return d0, c0, d1, c1
 
-def get_prefilter_coff_Kw2(sr):
-    # This is closer to the ITU documentation than get_prefilter_coff_Kw1(sr).
+def get_prefilter_coeff_Kw2(sr):
+    # coefficients calculation by BrechtDeMan. This is closer to the ITU documentation than get_prefilter_coeff_Kw1(sr).
     # pre-filter 1
     f0 = 1681.9744509555319
     G  = 3.99984385397
@@ -123,10 +126,11 @@ def get_prefilter_coff_Kw2(sr):
     d1, c1 = np.array([b0,b1,b2]), np.array([a0,a1,a2])
     return d0, c0, d1, c1
 
-def get_prefilter_coff_Fenton(sr):
-    d0, c0 = get_prefilter_coff(sr, 5.0, 1/np.sqrt(2), 1500.0, 'high_shelf')
-    d1, c1 = get_prefilter_coff(sr, 0.0, 0.5, 130.0, 'high_pass')
-    d2, c2 = get_prefilter_coff(sr, 0.0, 1/np.sqrt(2), 500.0, 'high_pass')
+def get_prefilter_coeff_Fenton(sr):
+    # another coefficients calculation by csteinmetz1, based on Fenton's work.
+    d0, c0 = get_prefilter_coeff(sr, 5.0, 1/np.sqrt(2), 1500.0, 'high_shelf')
+    d1, c1 = get_prefilter_coeff(sr, 0.0, 0.5, 130.0, 'high_pass')
+    d2, c2 = get_prefilter_coeff(sr, 0.0, 1/np.sqrt(2), 500.0, 'high_pass')
     return d0, c0, d1, c1, d2, c2
 
 def prefilter_Kw(au, sr, d0, c0, d1, c1):
@@ -142,27 +146,30 @@ def prefilter_Fenton(au, sr, d0, c0, d1, c1, d2, c2):
 
 def get_lufs_mono(au, sr):
     """
-    The input audio should have been prefiltered.
+    The input audio should have been prefiltered. Only works for mono or stereo audio because I didn't calculate the different weights (only sum) for the 5-channel input.
     """
     lufs = -0.691 + 10*np.log10(np.average(np.square(au)))
     return lufs
 
 def get_lufs_multi(au, sr):
     """
-    The input audio should have been prefiltered.
+    The input audio should have been prefiltered. Only works for mono or stereo audio because I didn't calculate the different weights (only sum) for the 5-channel input.
     """
     lufs = -0.691 + 10*np.log10(np.sum(np.average(np.square(au), axis=0)))
     return lufs
 
 def get_Mlufs(au, sr, win=0.4, overlap=0.75):
     """
-    win: float, seconds. Time length of each window.
-    overlap: float, proportion. Proportion of overlapping between windows. 
+    Get the maxinum momentary lufs of a mono or stereo audio input.
+    win: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
+    overlap: float, proportion. Proportion of overlapping between windows.
+    Only works for mono or stereo audio because I didn't calculate the different weights (only sum) for the 5-channel input.
+    You can modify the return np.amax(Mlufs) to Mlufs so you can get the full Mlufs array corresponding to the windowed audio.
     """
     step = int(sr*win)
     hop = int(step*(1-overlap))
     Mlufs = np.empty(0)
-    d0, c0, d1, c1 = get_prefilter_coff_Kw2(sr)
+    d0, c0, d1, c1 = get_prefilter_coeff_Kw2(sr)
     if au.ndim == 2:
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
@@ -193,13 +200,15 @@ def get_Mlufs(au, sr, win=0.4, overlap=0.75):
 
 def get_Ilufs(au, sr, win=0.4, overlap=0.75):
     """
+    Get the integrated lufs of a mono or stereo audio input.
     win: float, seconds. Time length of each window.
-    overlap: float, proportion. Proportion of overlapping between windows. 
+    overlap: float, proportion. Proportion of overlapping between windows.
+    Only works for mono or stereo audio because I didn't calculate the different weights (only sum) for the 5-channel input.
     """
     step = int(sr*win)
     hop = int(step*(1-overlap))
     Lk, Z = np.empty(0), np.empty(0)
-    d0, c0, d1, c1 = get_prefilter_coff_Kw2(sr)
+    d0, c0, d1, c1 = get_prefilter_coeff_Kw2(sr)
     if au.ndim == 2:
         nchannel = au.shape[-1]
         q1, q2 = divmod(au.shape[0], hop)
@@ -234,6 +243,10 @@ def get_Ilufs(au, sr, win=0.4, overlap=0.75):
     Z = Z[Lk > td]
     Ilufs = -0.691 + 10*np.log10(np.average(Z))
     return Ilufs
+
+def norm_Mlufs(au, sr, target=-23.0):
+    au *= db2amp(target - get_Ilufs(au, sr))
+    return au
 
 def norm_Mlufs(au, sr, target=-18.0):
     au *= db2amp(target - get_Mlufs(au, sr))
@@ -272,7 +285,7 @@ def norm_mono_peak(au, amp=0.5):
     au *= amp/np.amax(np.abs(au))
     return au
 
-def change_LR_ratio(au, scale):
+def change_LR_peak_ratio(au, scale):
     """
     scale: zero or positive float. 1 means unchanged. >1 means to intensify the LR peaks' difference and <1 means to attenuate the LR peaks' difference.
     If peak_L >= peak_R, before changing, peak_L=peak_R*ratio. After changing, peak_L=peak_R*(1+scale*(ratio-1)).
