@@ -171,8 +171,7 @@ def get_Mlufs(au, sr, T=0.4, overlap=0.75):
     Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
     You can modify the return 'np.amax(Mlufs)' to 'Mlufs' so you can get the full Mlufs array corresponding to the windowed audio.
     """
-    step = int(sr*T)
-    hop = int(step*(1-overlap))
+    step, hop = int(sr*T), int(sr*T*(1-overlap))
     Mlufs = np.empty(0)
     d0, c0, d1, c1 = get_prefilter_coeff_Kw2(sr)
     if au.ndim == 2:
@@ -206,8 +205,7 @@ def get_Ilufs(au, sr, T=0.4, overlap=0.75):
     overlap: float, proportion. Proportion of overlapping between windows.
     Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
     """
-    step = int(sr*T)
-    hop = int(step*(1-overlap))
+    step, hop = int(sr*T), int(sr*T*(1-overlap))
     Lk, Z = np.empty(0), np.empty(0)
     d0, c0, d1, c1 = get_prefilter_coeff_Kw2(sr)
     if au.ndim == 2:
