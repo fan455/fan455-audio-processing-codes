@@ -160,7 +160,7 @@ def get_lufs_multi(au, sr):
 
 def get_Mlufs(au, sr, win=0.4, overlap=0.75):
     """
-    Get the maxinum momentary lufs of a mono or stereo audio input.
+    Get the maxinum momentary lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
     win: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
     overlap: float, proportion. Proportion of overlapping between windows.
     Only works for mono or stereo audio because I didn't calculate the different weights (only sum) for the 5-channel input.
@@ -200,7 +200,7 @@ def get_Mlufs(au, sr, win=0.4, overlap=0.75):
 
 def get_Ilufs(au, sr, win=0.4, overlap=0.75):
     """
-    Get the integrated lufs of a mono or stereo audio input.
+    Get the integrated lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
     win: float, seconds. Time length of each window.
     overlap: float, proportion. Proportion of overlapping between windows.
     Only works for mono or stereo audio because I didn't calculate the different weights (only sum) for the 5-channel input.
@@ -244,7 +244,7 @@ def get_Ilufs(au, sr, win=0.4, overlap=0.75):
     Ilufs = -0.691 + 10*np.log10(np.average(Z))
     return Ilufs
 
-def norm_Mlufs(au, sr, target=-23.0):
+def norm_Ilufs(au, sr, target=-23.0):
     au *= db2amp(target - get_Ilufs(au, sr))
     return au
 
