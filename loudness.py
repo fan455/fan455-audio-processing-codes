@@ -20,16 +20,23 @@ def amp2db(amp: float): # zero or positive amp value range between 0 and 1.
 def db2amp(db: float): # zero or negative db value.
     return np.power(10, db/20)
 
-def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True):
+def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None):
     """
     Generate a pure sine wave for loudness testing.
     f: float. Frequency.
     phase: float. Initial phase.
     A: float. Maxinum amplitude.
+    du: float, seconds. Duration of sinewave.
+    ls: float, seconds. Duration of leading silence.
+    ts: float, seconds. Duration of trailing silence.
     """
     t = np.arange(0, int(du*sr))/sr
     size = t.size
     y = A*np.sin(2*np.pi*f*t + phase)
+    if ls:
+        y = np.append(np.zeros(int(ls*sr)), y)
+    if ts:
+        y = np.append(y, np.zeros(int(ts*sr)))
     if stereo:
         y = y.reshape(size, 1)
         return np.broadcast_to(y, (size, 2))
@@ -163,11 +170,12 @@ def get_lufs_multi(au, sr):
     lufs = -0.691 + 10*np.log10(np.sum(np.average(np.square(au), axis=0)))
     return lufs
 
-def get_Mlufs(au, sr, T=0.4, overlap=0.75):
+def get_Mlufs(au, sr, T=0.4, overlap=0.75, cut_start=None):
     """
     Get the maxinum momentary lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
     T: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
     overlap: float, proportion. Proportion of overlapping between windows.
+    cut_start: float, seconds. The start seconds to only analyze.
     Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
     You can modify the return 'np.amax(Mlufs)' to 'Mlufs' so you can get the full Mlufs array corresponding to the windowed audio.
     """
@@ -175,6 +183,8 @@ def get_Mlufs(au, sr, T=0.4, overlap=0.75):
     Mlufs = np.empty(0)
     d0, c0, d1, c1 = get_prefilter_coeff_Kw2(sr)
     if au.ndim == 2:
+        if cut_start:
+            au = au[0: int(sr*cut_start), :]
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
         if q3 > 0:
@@ -185,6 +195,8 @@ def get_Mlufs(au, sr, T=0.4, overlap=0.75):
             mlufs = get_lufs_multi(au_f, sr)
             Mlufs = np.append(Mlufs, mlufs)
     elif au.ndim == 1:
+        if cut_start:
+            au = au[0: int(sr*cut_start)]
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
         if q3 > 0:
@@ -198,7 +210,7 @@ def get_Mlufs(au, sr, T=0.4, overlap=0.75):
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
     return np.amax(Mlufs)
 
-def get_Ilufs(au, sr, T=0.4, overlap=0.75):
+def get_Ilufs(au, sr, T=0.4, overlap=0.75, cut_start=None):
     """
     Get the integrated lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
     T: float, seconds. Time length of each window. It means the same as 'gating' in the ITU doc.
@@ -209,6 +221,8 @@ def get_Ilufs(au, sr, T=0.4, overlap=0.75):
     Lk, Z = np.empty(0), np.empty(0)
     d0, c0, d1, c1 = get_prefilter_coeff_Kw2(sr)
     if au.ndim == 2:
+        if cut_start:
+            au = au[0: int(sr*cut_start), :]
         nchannel = au.shape[-1]
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
@@ -221,6 +235,8 @@ def get_Ilufs(au, sr, T=0.4, overlap=0.75):
             lk = -0.691 + 10*np.log10(z)
             Lk, Z = np.append(Lk, lk), np.append(Z, z)
     elif au.ndim == 1:
+        if cut_start:
+            au = au[0: int(sr*cut_start)]
         q1, q2 = divmod(au.shape[0], hop)
         q3 = step - hop - q2
         if q3 > 0:
@@ -239,12 +255,12 @@ def get_Ilufs(au, sr, T=0.4, overlap=0.75):
     Ilufs = -0.691 + 10*np.log10(np.average(Z))
     return Ilufs
 
-def norm_Ilufs(au, sr, target=-23.0):
-    au *= db2amp(target - get_Ilufs(au, sr))
+def norm_Ilufs(au, sr, target=-23.0, cut_start=None):
+    au *= db2amp(target - get_Ilufs(au, sr, cut_start=cut_start))
     return au
 
-def norm_Mlufs(au, sr, target=-18.0):
-    au *= db2amp(target - get_Mlufs(au, sr))
+def norm_Mlufs(au, sr, target=-18.0, cut_start=None):
+    au *= db2amp(target - get_Mlufs(au, sr, cut_start=cut_start))
     return au
 
 def check_clipping(au):
