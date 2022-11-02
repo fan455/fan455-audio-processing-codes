@@ -46,15 +46,6 @@ def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None)
         return np.broadcast_to(y, (size, 2))
     else:
         return y
-    
-def norm_lufs(au, sr, old, new=-18.0):
-    return au*db2amp(new - old)
-
-def norm_Mlufs(au, sr, old, new=-18.0):
-    return au*db2amp(new - old)
-
-def norm_Ilufs(au, sr, old, new=-23.0):
-    return au*db2amp(new - old)
 
 class Mlufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
@@ -144,6 +135,9 @@ class Mlufs_meter():
         else:
             raise ValueError(f'au.ndim = {au.ndim} is not supported.')
         return np.amax(Mlufs)
+
+    def norm(self, au, target=-18.0)
+        return au*db2amp(target - self.get(au))
     
 class Ilufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
@@ -239,6 +233,9 @@ class Ilufs_meter():
         Ilufs = -0.691 + 10*np.log10(np.average(Z))
         return Ilufs
 
+    def norm(self, au, target=-23.0)
+        return au*db2amp(target - self.get(au))
+    
 def print_peak(au):
     au_abs = np.abs(au)
     peak_amp = np.amax(au_abs)
