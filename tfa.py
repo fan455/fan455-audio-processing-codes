@@ -1,9 +1,28 @@
 """
-Audio Time-Frequency Analysis codes based on numpy, scipy and matplotlib.
+Audio Time-Frequency Analysis codes based on numpy, scipy, resampy and matplotlib.
 """
 import numpy as np
 from scipy import signal
-from scipy.interpolate import CubicSpline
+import resampy
+
+def resample(au, sr, sr_new):
+    return resampy.resample(au, sr, sr_new, axis=0)
+
+def pitch_shift_cent(au, sr, cent):
+    sr_stretch = int(np.rint(sr/cent2ratio(cent)))
+    return resampy.resample(au, sr, sr_stretch, axis=0)
+
+def pitch_shift_cent_2(au, sr, cent, sr_new):
+    sr_stretch = int(np.rint(sr_new/cent2ratio(cent)))
+    return resampy.resample(au, sr, sr_stretch, axis=0)
+
+def pitch_shift_ratio(au, sr, ratio):
+    sr_stretch = int(np.rint(sr/ratio))
+    return resampy.resample(au, sr, sr_stretch, axis=0)
+
+def pitch_shift_ratio_2(au, sr, ratio, sr_new):
+    sr_stretch = int(np.rint(sr_new/ratio))
+    return resampy.resample(au, sr, sr_stretch, axis=0)
 
 def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
     """
@@ -98,7 +117,6 @@ def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
         else:
             raise ValueError('The input audio array has no dimension, or more than 2 dimensions which means it may be a framed audio.')
     f, t, z = signal.stft(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None, axis=0)
-    t = np.around(t, 2)
     if output == 'm':
         m = np.abs(z)
         return f, t, m
@@ -153,27 +171,3 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, 
     pitch = F[np.argmax(M)]
     print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, {round(given_cent, 2)} cent band and {np.round(cent_step, 2)} cent step.')
     return pitch
-
-def interpolate_pitch(f, num):
-    """
-    Interpolate a frequency array.
-    
-    f: ndarray (Hz). The input frequency array, strictly increasing.
-    num: int. Number of frequencies to interpolate between every 2 adjacent input frequencies.
-    """
-    size = (num + 1)*f.size - num
-    n, n_f = np.arange(0, size), np.arange(0, size, num+1)
-    cs = CubicSpline(n_f, f)
-    f_itp = cs(n)
-    return f_itp
-
-def interpolate_pitch_midi(f, Midi_f, Midi):
-    """
-    Interpolate a frequency array given its midi array and the target midi array.
-
-    f: ndarray (Hz). The input frequency array, strictly increasing.
-    Midi_f: ndarray. The midi array corresponding to the f array.
-    Midi: ndarray. The midi array to apply interpolation.
-    """
-    cs = CubicSpline(Midi_f, f)
-    return cs(Midi)
