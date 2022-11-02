@@ -236,7 +236,7 @@ class Ilufs_meter():
     def norm(self, au, target=-23.0)
         return au*db2amp(target - self.get(au))
     
-def print_peak(au):
+def display_peak(au):
     au_abs = np.abs(au)
     peak_amp = np.amax(au_abs)
     peak_db = amp2db(peak_amp)
