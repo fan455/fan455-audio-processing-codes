@@ -57,21 +57,23 @@ def norm_Ilufs(au, sr, old, new=-23.0):
     return au*db2amp(new - old)
 
 class Mlufs_meter():
-    # This allows the pre-computation of prefilter coefficients for better performance.
+    # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
     def __init__(self, sr):
         self.sr = sr
-        if sr == 48000:
+        if self.sr == 48000:
+            # coefficients in the ITU documentation.
             self.d0 = np.array([1.53512485958697, -2.69169618940638, 1.19839281085285])
             self.c0 = np.array([1.0 , -1.69065929318241, 0.73248077421585])
             self.d1 = np.array([1.0, -2.0, 1.0])
             self.c1 = np.array([1.0, -1.99004745483398, 0.99007225036621])
-        elif sr == 44100:
+        elif self.sr == 44100:
+            # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
             self.d0 = np.array([1.5308412300498355, -2.6509799951536985, 1.1690790799210682])
             self.c0 = np.array([1.0, -1.6636551132560204, 0.7125954280732254])
             self.d1 = np.array([1.0, -2.0, 1.0])
             self.c1 = np.array([1.0, -1.9891696736297957, 0.9891990357870394])
         else:
-            # coefficients calculation by BrechtDeMan. This is closer to the ITU documentation than get_prefilter_coeff_Kw1(sr).
+            # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
             # pre-filter 1
             f0 = 1681.9744509555319
             G  = 3.99984385397
@@ -144,21 +146,23 @@ class Mlufs_meter():
         return np.amax(Mlufs)
     
 class Ilufs_meter():
-    # This allows the pre-computation of prefilter coefficients for better performance.
+    # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
     def __init__(self, sr):
         self.sr = sr
-        if sr == 48000:
+        if self.sr == 48000:
+            # coefficients in the ITU documentation.
             self.d0 = np.array([1.53512485958697, -2.69169618940638, 1.19839281085285])
             self.c0 = np.array([1.0 , -1.69065929318241, 0.73248077421585])
             self.d1 = np.array([1.0, -2.0, 1.0])
             self.c1 = np.array([1.0, -1.99004745483398, 0.99007225036621])
-        elif sr == 44100:
+        elif self.sr == 44100:
+            # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
             self.d0 = np.array([1.5308412300498355, -2.6509799951536985, 1.1690790799210682])
             self.c0 = np.array([1.0, -1.6636551132560204, 0.7125954280732254])
             self.d1 = np.array([1.0, -2.0, 1.0])
             self.c1 = np.array([1.0, -1.9891696736297957, 0.9891990357870394])
         else:
-            # coefficients calculation by BrechtDeMan. This is closer to the ITU documentation than get_prefilter_coeff_Kw1(sr).
+            # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
             # pre-filter 1
             f0 = 1681.9744509555319
             G  = 3.99984385397
