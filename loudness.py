@@ -136,7 +136,7 @@ class Mlufs_meter():
             raise ValueError(f'au.ndim = {au.ndim} is not supported.')
         return np.amax(Mlufs)
 
-    def norm(self, au, target=-18.0)
+    def norm(self, au, target=-20.0):
         return au*db2amp(target - self.get(au))
     
 class Ilufs_meter():
@@ -233,10 +233,10 @@ class Ilufs_meter():
         Ilufs = -0.691 + 10*np.log10(np.average(Z))
         return Ilufs
 
-    def norm(self, au, target=-23.0)
+    def norm(self, au, target=-23.0):
         return au*db2amp(target - self.get(au))
-    
-def display_peak(au):
+
+def print_peak(au):
     au_abs = np.abs(au)
     peak_amp = np.amax(au_abs)
     peak_db = amp2db(peak_amp)
