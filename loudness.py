@@ -110,7 +110,7 @@ class Mlufs_meter():
         Mlufs = np.empty(0)
         if au.ndim == 2:
             if cut_start:
-                au = au[0: int(sr*cut_start), :]
+                au = au[0: int(self.sr*cut_start), :]
             q1, q2 = divmod(au.shape[0], hop)
             q3 = step - hop - q2
             if q3 > 0:
@@ -122,7 +122,7 @@ class Mlufs_meter():
                 Mlufs = np.append(Mlufs, mlufs)
         elif au.ndim == 1:
             if cut_start:
-                au = au[0: int(sr*cut_start)]
+                au = au[0: int(self.sr*cut_start)]
             q1, q2 = divmod(au.shape[0], hop)
             q3 = step - hop - q2
             if q3 > 0:
@@ -136,8 +136,8 @@ class Mlufs_meter():
             raise ValueError(f'au.ndim = {au.ndim} is not supported.')
         return np.amax(Mlufs)
 
-    def norm(self, au, target=-20.0):
-        return au*db2amp(target - self.get(au))
+    def norm(self, au, target=-20.0, cut_start=None):
+        return au*db2amp(target - self.get(au, cut_start=cut_start))
     
 class Ilufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
@@ -200,7 +200,7 @@ class Ilufs_meter():
         Lk, Z = np.empty(0), np.empty(0)
         if au.ndim == 2:
             if cut_start:
-                au = au[0: int(sr*cut_start), :]
+                au = au[0: int(self.sr*cut_start), :]
             nchannel = au.shape[-1]
             q1, q2 = divmod(au.shape[0], hop)
             q3 = step - hop - q2
@@ -214,7 +214,7 @@ class Ilufs_meter():
                 Lk, Z = np.append(Lk, lk), np.append(Z, z)
         elif au.ndim == 1:
             if cut_start:
-                au = au[0: int(sr*cut_start)]
+                au = au[0: int(self.sr*cut_start)]
             q1, q2 = divmod(au.shape[0], hop)
             q3 = step - hop - q2
             if q3 > 0:
@@ -233,8 +233,8 @@ class Ilufs_meter():
         Ilufs = -0.691 + 10*np.log10(np.average(Z))
         return Ilufs
 
-    def norm(self, au, target=-23.0):
-        return au*db2amp(target - self.get(au))
+    def norm(self, au, target=-23.0, cut_start=None):
+        return au*db2amp(target - self.get(au, cut_start=cut_start))
 
 def print_peak(au):
     au_abs = np.abs(au)
