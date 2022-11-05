@@ -7,7 +7,7 @@ import numpy as np
 
 Note = ('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B')
 
-def note2midi(note_str, middle_c='C3'):
+def note2midi(note_str, middle_C='C3'):
     if note_str[-2] == '-':
         octave = int(note_str[-2:])
         if len(note_str) == 3:
@@ -26,14 +26,14 @@ def note2midi(note_str, middle_c='C3'):
             raise ValueError('The input note_str is not supported')
     note = note.upper()
     note_idx = Note.index(note)
-    octave_idx = int(octave) + 4 - int(middle_c[-1])
+    octave_idx = int(octave) + 4 - int(middle_C[-1])
     midi = idx2midi(note_idx, octave_idx)
     return midi
 
-def midi2note(midi, middle_c='C3'):
+def midi2note(midi, middle_C='C3'):
     note_idx, octave_idx = midi2idx(midi)
     note = Note[note_idx]
-    octave = octave_idx + int(middle_c[-1]) - 4
+    octave = octave_idx + int(middle_C[-1]) - 4
     return f'{note}{octave}'
 
 def idx2midi(note_idx, octave_idx):
@@ -46,13 +46,13 @@ def midi2idx(midi):
 def midi2midi_idx(midi):
     return midi - 21
 
-def midi2freq(midi):
-    f = 440*np.exp2((midi-69)/12)
+def midi2freq(midi, middle_A=440):
+    f = middle_A*np.exp2((midi-69)/12)
     return f
 
-def note2freq(note_str, middle_c='C3'):
-    midi = note2midi(note_str, middle_c=middle_c)
-    f = midi2freq(midi)
+def note2freq(note_str, middle_C='C3', middle_A=440):
+    midi = note2midi(note_str, middle_C=middle_C)
+    f = midi2freq(midi, middle_A=middle_A)
     return f
 
 def freq2cent(f1, f2):
