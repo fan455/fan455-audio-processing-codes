@@ -27,8 +27,7 @@ def note2midi(note_str, middle_C='C3'):
     note = note.upper()
     note_idx = Note.index(note)
     octave_idx = int(octave) + 4 - int(middle_C[-1])
-    midi = idx2midi(note_idx, octave_idx)
-    return midi
+    return idx2midi(note_idx, octave_idx)
 
 def midi2note(midi, middle_C='C3'):
     note_idx, octave_idx = midi2idx(midi)
@@ -47,30 +46,24 @@ def midi2midi_idx(midi):
     return midi - 21
 
 def midi2freq(midi, middle_A=440):
-    f = middle_A*np.exp2((midi-69)/12)
-    return f
+    return middle_A*np.exp2((midi-69)/12)
 
 def note2freq(note_str, middle_C='C3', middle_A=440):
     midi = note2midi(note_str, middle_C=middle_C)
-    f = midi2freq(midi, middle_A=middle_A)
-    return f
+    return midi2freq(midi, middle_A=middle_A)
 
 def freq2cent(f1, f2):
-    cent = 1200*np.log2(f2/f1)
-    return cent
+    return 1200*np.log2(f2/f1)
 
 def midi2cent(midi1, midi2):
     f1, f2 = midi2freq(midi1), midi2freq(midi2)
-    cent = freq2cent(f1, f2)
-    return cent
+    return freq2cent(f1, f2)
 
 def ratio2cent(ratio):
-    cent = 1200*np.log2(ratio)
-    return cent
+    return 1200*np.log2(ratio)
 
 def cent2ratio(cent):
-    ratio = np.exp2(cent/1200)
-    return ratio
+    return np.exp2(cent/1200)
 
 def pitch_shift_st(f, st):
     # pitch shift in semitones (st).
