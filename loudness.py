@@ -35,12 +35,12 @@ def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None)
     ts: float, seconds. Duration of trailing silence.
     """
     t = np.arange(0, int(du*sr))/sr
-    size = t.size
     y = A*np.sin(2*np.pi*f*t + phase)
     if ls:
         y = np.append(np.zeros(int(ls*sr)), y)
     if ts:
         y = np.append(y, np.zeros(int(ts*sr)))
+    size = y.size
     if stereo:
         y = y.reshape(size, 1)
         return np.broadcast_to(y, (size, 2))
@@ -49,8 +49,13 @@ def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None)
 
 class Mlufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
-    def __init__(self, sr):
-        self.sr = sr
+    def __init__(self, sr, threshold=-70.0):
+        """
+        sr: float. Sample rate for audio. If you want to process different sample rates, you need to set more than 1 meters.
+        threshold: float, LUFS or LKFS. If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
+        """
+        self.sr, self.threshold = sr, threshold
+        self.z_threshold = np.power(10, (self.threshold+0.691)/10)
         if self.sr == 48000:
             # coefficients in the ITU documentation.
             self.d0 = np.array([1.53512485958697, -2.69169618940638, 1.19839281085285])
@@ -118,7 +123,11 @@ class Mlufs_meter():
             for i in range(0, q1):
                 au_f = au[i*hop: i*hop+step, :]
                 au_f = self.prefilter(au_f)
-                mlufs = -0.691 + 10*np.log10(np.sum(np.average(np.square(au_f), axis=0)))
+                z = np.sum(np.average(np.square(au_f), axis=0))
+                if z < self.z_threshold:
+                    mlufs = float('-inf')
+                else:
+                    mlufs = -0.691 + 10*np.log10(z)
                 Mlufs = np.append(Mlufs, mlufs)
         elif au.ndim == 1:
             if cut_start:
@@ -130,7 +139,11 @@ class Mlufs_meter():
             for i in range(0, q1):
                 au_f = au[i*hop: i*hop+step]
                 au_f = self.prefilter(au_f)
-                mlufs = -0.691 + 10*np.log10(np.average(np.square(au_f)))
+                z = np.average(np.square(au_f))
+                if z < self.z_threshold:
+                    mlufs = float('-inf')
+                else:
+                    mlufs = -0.691 + 10*np.log10(z)
                 Mlufs = np.append(Mlufs, mlufs)
         else:
             raise ValueError(f'au.ndim = {au.ndim} is not supported.')
@@ -141,8 +154,13 @@ class Mlufs_meter():
     
 class Ilufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
-    def __init__(self, sr):
-        self.sr = sr
+    def __init__(self, sr, threshold=-70.0):
+        """
+        sr: float. Sample rate for audio. If you want to process different sample rates, you need to set more than 1 meters.
+        threshold: float, LUFS or LKFS. If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
+        """
+        self.sr, self.threshold = sr, threshold
+        self.z_threshold = np.power(10, (self.threshold+0.691)/10)
         if self.sr == 48000:
             # coefficients in the ITU documentation.
             self.d0 = np.array([1.53512485958697, -2.69169618940638, 1.19839281085285])
@@ -197,7 +215,7 @@ class Ilufs_meter():
         Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
         """
         step, hop = int(self.sr*T), int(self.sr*T*(1-overlap))
-        Lk, Z = np.empty(0), np.empty(0)
+        Mlufs, Z = np.empty(0), np.empty(0)
         if au.ndim == 2:
             if cut_start:
                 au = au[0: int(self.sr*cut_start), :]
@@ -210,8 +228,11 @@ class Ilufs_meter():
                 au_f = au[i*hop: i*hop+step, :]
                 au_f = self.prefilter(au_f)
                 z = np.sum(np.average(np.square(au_f), axis=0))
-                lk = -0.691 + 10*np.log10(z)
-                Lk, Z = np.append(Lk, lk), np.append(Z, z)
+                if z < self.z_threshold:
+                    mlufs = float('-inf')
+                else:
+                    mlufs = -0.691 + 10*np.log10(z)
+                Mlufs, Z = np.append(Mlufs, mlufs), np.append(Z, z)
         elif au.ndim == 1:
             if cut_start:
                 au = au[0: int(self.sr*cut_start)]
@@ -223,14 +244,30 @@ class Ilufs_meter():
                 au_f = au[i*hop: i*hop+step]
                 au_f = self.prefilter(au_f)
                 z = np.average(np.square(au_f), axis=0)
-                lk = -0.691 + 10*np.log10(z)
-                Lk, Z = np.append(Lk, lk), np.append(Z, z)
+                if z < self.z_threshold:
+                    mlufs = float('-inf')
+                else:
+                    mlufs = -0.691 + 10*np.log10(z)
+                Mlufs, Z = np.append(Mlufs, mlufs), np.append(Z, z)
         else:
             raise ValueError(f'au.ndim = {au.ndim} is not supported.')
-        Z0 = Z[Lk > -70]
-        td = -0.691 + 10*np.log10(np.average(Z0)) - 10
-        Z = Z[Lk > td]
-        Ilufs = -0.691 + 10*np.log10(np.average(Z))
+        Z0 = Z[Mlufs > -70.0]
+        if Z0.size == 0:
+            Ilufs = float('-inf')
+        else:
+            z1 = np.average(Z0)
+            if z1 >= self.z_threshold:
+                Z = Z[Mlufs > -0.691 + 10*np.log10(z1) - 10]
+            else:
+                pass 
+        if Z.size == 0:
+            Ilufs = float('-inf')
+        else:
+            z2 = np.average(Z)
+            if z2 >= self.z_threshold:
+                Ilufs = -0.691 + 10*np.log10(z2)
+            else:
+                Ilufs = float('-inf')
         return Ilufs
 
     def norm(self, au, target=-23.0, cut_start=None):
@@ -278,4 +315,3 @@ def change_LR_peak_ratio(au, scale):
         ratio = peak_R/peak_L
         au *= np.array([1, (1+(ratio-1)*scale)/ratio])
     return au
-
