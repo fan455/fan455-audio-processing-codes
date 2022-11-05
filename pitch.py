@@ -4,35 +4,40 @@ For pianos' 88 notes only. There're 9 octaves (2 incomplete octaves at both ends
 The frequency calculation follows the standard frequencies of musical notes.
 """
 import numpy as np
-from scipy.interpolate import CubicSpline
 
 Note = ('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B')
 
-def note2midi(note_str, middle_c='C4'):
-    if len(note_str) == 2:
-        note = note_str[0]
-    elif len(note_str) == 3:
-        note = note_str[0: 2]
+def note2midi(note_str, middle_c='C3'):
+    if note_str[-2] == '-':
+        octave = int(note_str[-2:])
+        if len(note_str) == 3:
+            note = note_str[0]
+        elif len(note_str) == 4:
+            note = note_str[0: 2]
+        else:
+            raise ValueError('The input note_str is not supported')
     else:
-        raise ValueError('The length of note_str needs to be 2 or 3')
+        octave = int(note_str[-1])
+        if len(note_str) == 2:
+            note = note_str[0]
+        elif len(note_str) == 3:
+            note = note_str[0: 2]
+        else:
+            raise ValueError('The input note_str is not supported')
     note = note.upper()
     note_idx = Note.index(note)
-    octave_idx = int(note_str[-1]) + 4 - int(middle_c[-1])
+    octave_idx = int(octave) + 4 - int(middle_c[-1])
     midi = idx2midi(note_idx, octave_idx)
     return midi
 
-def midi2note(midi, middle_c='C4'):
+def midi2note(midi, middle_c='C3'):
     note_idx, octave_idx = midi2idx(midi)
     note = Note[note_idx]
     octave = octave_idx + int(middle_c[-1]) - 4
     return f'{note}{octave}'
 
 def idx2midi(note_idx, octave_idx):
-    midi = 12 + note_idx + 12*octave_idx
-    if 21 <= midi <= 108:
-        return midi
-    else:
-        return 0 # Only indices of the 88 notes will have true corresponding midi, otherwise returns 0.
+    return 12 + note_idx + 12*octave_idx
 
 def midi2idx(midi):
     a, b = divmod(midi-11, 12)
@@ -45,7 +50,7 @@ def midi2freq(midi):
     f = 440*np.exp2((midi-69)/12)
     return f
 
-def note2freq(note_str, middle_c='C4'):
+def note2freq(note_str, middle_c='C3'):
     midi = note2midi(note_str, middle_c=middle_c)
     f = midi2freq(midi)
     return f
@@ -81,6 +86,7 @@ def interpolate_pitch(f, num):
     f: ndarray (Hz). The input frequency array, strictly increasing.
     num: int. Number of frequencies to interpolate between every 2 adjacent input frequencies.
     """
+    from scipy.interpolate import CubicSpline
     size = (num + 1)*f.size - num
     n, n_f = np.arange(0, size), np.arange(0, size, num+1)
     cs = CubicSpline(n_f, f)
@@ -95,5 +101,6 @@ def interpolate_pitch_midi(f, Midi_f, Midi):
     Midi_f: ndarray. The midi array corresponding to the f array.
     Midi: ndarray. The midi array to apply interpolation.
     """
+    from scipy.interpolate import CubicSpline
     cs = CubicSpline(Midi_f, f)
     return cs(Midi)
