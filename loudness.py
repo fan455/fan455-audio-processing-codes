@@ -49,12 +49,17 @@ def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None)
 
 class Mlufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
-    def __init__(self, sr, threshold=-70.0):
+    def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0):
         """
         sr: float. Sample rate for audio. If you want to process different sample rates, you need to set more than 1 meters.
+        T: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
+        overlap: float, proportion. Proportion of overlapping between windows.
+        cut_start: float, seconds. The start seconds to only analyze.
         threshold: float, LUFS or LKFS. If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
+        Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
+        You can modify the return 'np.amax(Mlufs)' to 'Mlufs' so you can get the full Mlufs array corresponding to the windowed audio.
         """
-        self.sr, self.threshold = sr, threshold
+        self.sr, self.T, self.overlap, self.threshold = sr, T, overlap, threshold
         self.z_threshold = np.power(10, (self.threshold+0.691)/10)
         if self.sr == 48000:
             # coefficients in the ITU documentation.
@@ -102,16 +107,9 @@ class Mlufs_meter():
         au = signal.lfilter(self.d1, self.c1, au, axis=0)
         return au
 
-    def get(self, au, T=0.4, overlap=0.75, cut_start=None):
-        """
-        Get the maxinum momentary lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
-        T: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
-        overlap: float, proportion. Proportion of overlapping between windows.
-        cut_start: float, seconds. The start seconds to only analyze.
-        Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
-        You can modify the return 'np.amax(Mlufs)' to 'Mlufs' so you can get the full Mlufs array corresponding to the windowed audio.
-        """
-        step, hop = int(self.sr*T), int(self.sr*T*(1-overlap))
+    def get(self, au, cut_start=None):
+        # Get the maxinum momentary lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
+        step, hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         Mlufs = np.empty(0)
         if au.ndim == 2:
             if cut_start:
@@ -154,12 +152,15 @@ class Mlufs_meter():
     
 class Ilufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
-    def __init__(self, sr, threshold=-70.0):
+    def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0):
         """
         sr: float. Sample rate for audio. If you want to process different sample rates, you need to set more than 1 meters.
+        T: float, seconds. Time length of each window. It means the same as 'gating' in the ITU doc.
+        overlap: float, proportion. Proportion of overlapping between windows.
         threshold: float, LUFS or LKFS. If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
+        Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
         """
-        self.sr, self.threshold = sr, threshold
+        self.sr, self.T, self.overlap, self.threshold = sr, T, overlap, threshold
         self.z_threshold = np.power(10, (self.threshold+0.691)/10)
         if self.sr == 48000:
             # coefficients in the ITU documentation.
@@ -207,14 +208,9 @@ class Ilufs_meter():
         au = signal.lfilter(self.d1, self.c1, au, axis=0)
         return au
 
-    def get(self, au, T=0.4, overlap=0.75, cut_start=None):
-        """
-        Get the integrated lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
-        T: float, seconds. Time length of each window. It means the same as 'gating' in the ITU doc.
-        overlap: float, proportion. Proportion of overlapping between windows.
-        Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
-        """
-        step, hop = int(self.sr*T), int(self.sr*T*(1-overlap))
+    def get(self, au, cut_start=None):
+        # Get the integrated lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
+        step, hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         Mlufs, Z = np.empty(0), np.empty(0)
         if au.ndim == 2:
             if cut_start:
