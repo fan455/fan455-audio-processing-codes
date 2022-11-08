@@ -1,10 +1,16 @@
 import numpy as np
 
-def trim_ls2(au, sr, amp, scale, du, lead_du=None):
+def amp2db(amp: float): # zero or positive amp value range between 0 and 1.
+    return 20*np.log10(amp)
+
+def db2amp(db: float): # zero or negative db value.
+    return np.power(10, db/20)
+
+def trim_ls2(au, sr, db, scale, du, lead_du=None):
     """
     trim leading silence, depending on the loudness of the moving window relative to the first window (usually silence).
     """
-    n = int(sr*du)
+    n, amp = int(sr*du), db2amp(db)
     if lead_du == None:
         lead_size = au.shape[0]
     else:
@@ -50,17 +56,17 @@ def trim_ls2(au, sr, amp, scale, du, lead_du=None):
     else:
         raise ValueError('audio needs to have 1 or 2 dimensions. Maybe your audio array is framed?')
 
-def trim_ls(au, sr, amp, du, lead_du=None):
+def trim_ls(au, sr, db, du, lead_du=None):
     """
     Trim the leading silence of an audio given the maxinum loudness (amp) and mininum duration (du) of silence.
 
     au: ndarray. Input audio array of 1 or 2 dimensions.
     sr: int. Sample rate of the input audio.
-    amp: float (between 0 and 1). abs(au) <= amp is silence if the duration requirement is met.
+    db: float (0 to -inf). abs(au) <= db2amp(db) is silence if the duration requirement is met.
     du: float (seconds). Minimum consecutive seconds for low amp values to be recognized as silence.
     lead_du: float (seconds). Seconds at the beginning to analyze. If set to None, use the whole audio.
     """
-    n = int(sr*du)
+    n, amp = int(sr*du), db2amp(db)
     if lead_du == None:
         lead_size = au.shape[0]
     else:
