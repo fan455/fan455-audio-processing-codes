@@ -147,7 +147,7 @@ class Mlufs_meter():
 
     def get_max(self, au, cut_start=None):
         # Get the maxinum momentary lufs.
-        return np.amax(self.get(self, au, cut_start=cut_start))
+        return np.amax(self.get(au, cut_start=cut_start))
 
     def norm(self, au, target=-20.0, cut_start=None):
         # Normalize the maxinum momentary lufs.
