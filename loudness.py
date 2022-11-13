@@ -42,8 +42,7 @@ def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None)
         y = np.append(y, np.zeros(int(ts*sr)))
     size = y.size
     if stereo:
-        y = y.reshape(size, 1)
-        return np.broadcast_to(y, (size, 2))
+        return np.broadcast_to(y.reshape(size, 1), (size, 2))
     else:
         return y
 
@@ -57,7 +56,6 @@ class Mlufs_meter():
         cut_start: float, seconds. The start seconds to only analyze.
         threshold: float, LUFS or LKFS. If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
         Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
-        You can modify the return 'np.amax(Mlufs)' to 'Mlufs' so you can get the full Mlufs array corresponding to the windowed audio.
         """
         self.sr, self.T, self.overlap, self.threshold = sr, T, overlap, threshold
         self.z_threshold = np.power(10, (self.threshold+0.691)/10)
@@ -108,7 +106,7 @@ class Mlufs_meter():
         return au
 
     def get(self, au, cut_start=None):
-        # Get the maxinum momentary lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
+        # Get the full Mlufs array corresponding to the windowed audio. The audio array will be padded zeros at the end to complete the last window.
         step, hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         Mlufs = np.empty(0)
         if au.ndim == 2:
@@ -145,10 +143,15 @@ class Mlufs_meter():
                 Mlufs = np.append(Mlufs, mlufs)
         else:
             raise ValueError(f'au.ndim = {au.ndim} is not supported.')
-        return np.amax(Mlufs)
+        return Mlufs
+
+    def get_max(self, au, cut_start=None):
+        # Get the maxinum momentary lufs.
+        return np.amax(self.get(self, au, cut_start=cut_start))
 
     def norm(self, au, target=-20.0, cut_start=None):
-        return au*db2amp(target - self.get(au, cut_start=cut_start))
+        # Normalize the maxinum momentary lufs.
+        return au*db2amp(target - self.get_max(au, cut_start=cut_start))
     
 class Ilufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
