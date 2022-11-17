@@ -5,19 +5,19 @@ import os
 import soundfile as sf
 from xxx import xxx #xxx is the function used for audio files batch processing.
 
-input_folder = '01'
-output_folder = '02'
+in_f = '01'
+out_f = '02'
+os.makedirs(out_f)
 
 k = 0
-for root, dirs, files in os.walk(input_folder):
+for root, dirs, files in os.walk(in_f):
     for file in files:
         if file.endswith('.wav'):
-            input_path = os.path.join(root, file) 
-            output_path = input_path.replace(input_folder, output_folder)
-            #output_path = output_path.replace('?', 'wav')
-            y, sr = sf.read(input_path)
+            in_p = os.path.join(root, file) 
+            out_p = in_p.replace(in_f, out_f)
+            y, sr = sf.read(in_p)
             y = xxx(y)
-            sf.write(output_path, y, sr, subtype='PCM_24')
+            sf.write(out_p, y, sr, subtype='PCM_24')
             k += 1
             print(f'{k} files processed.')
 
