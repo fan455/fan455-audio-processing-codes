@@ -150,6 +150,28 @@ def istft(m, p=None, T=1.0, overlap=0.5):
     del a, b
     return signal.istft(z, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None)
 
+def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None):
+    """
+    Generate a pure sine wave for loudness testing.
+    f: float (Hz). Frequency.
+    phase: float (rad angle). Initial phase.
+    A: float (amp). Maxinum amplitude.
+    du: float (seconds). Duration of sinewave.
+    ls: float (seconds). Duration of leading silence.
+    ts: float (seconds). Duration of trailing silence.
+    """
+    t = np.arange(0, int(du*sr))/sr
+    y = A*np.sin(2*np.pi*f*t + phase)
+    if ls:
+        y = np.append(np.zeros(int(ls*sr)), y)
+    if ts:
+        y = np.append(y, np.zeros(int(ts*sr)))
+    size = y.size
+    if stereo:
+        return np.broadcast_to(y.reshape((size, 1)), (size, 2))
+    else:
+        return y
+    
 def get_white_noise(sr, du, A=0.5, ls=None, ts=None, stereo=False):
     size = int(sr*du)
     if stereo == False: # mono
