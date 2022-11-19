@@ -137,7 +137,7 @@ def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
     else:
         raise ValueError('Parameter "output" has to be "m, p", "z" or "r, i".')
 
-def istft(m, p=None, T=1.0, overlap=0.5):
+def istft(sr, m, p=None, T=1.0, overlap=0.5):
     shape = m.shape
     if p == None:
         p = np.unwrap(np.random.uniform(0, 2*np.pi, shape))
