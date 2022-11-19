@@ -4,6 +4,7 @@ Audio Time-Frequency Analysis codes based on numpy, scipy, resampy and matplotli
 import numpy as np
 from scipy import signal
 import resampy
+from pitch import cent2ratio
 
 def resample(au, sr, sr_new):
     return resampy.resample(au, sr, sr_new, axis=0)
@@ -70,6 +71,8 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
             au_f = np.append(au_f, au[:, i*hop: i*hop+step], axis=0)
         if win == 'rectangular':
             pass
+        elif win == 'kaiser':
+            au_f *= np.kaiser(step, 14).reshape((1, step))
         elif win == 'hanning':
             au_f *= np.hanning(step).reshape((1, step))
         elif win == 'hamming':
@@ -130,9 +133,6 @@ def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
         return f, t, z.real, z.imag
     else:
         raise ValueError('Parameter "output" has to be "m, p", "z" or "r, i".')
-
-def cent2ratio(cent):
-    return np.exp2(cent/1200)
 
 def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
