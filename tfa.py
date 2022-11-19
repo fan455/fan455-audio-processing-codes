@@ -148,7 +148,7 @@ def istft(sr, m, p=None, T=1.0, overlap=0.5):
     z = np.empty(shape, dtype=np.complex128)
     z.real, z.imag = a, b
     del a, b
-    return signal.istft(z, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None)
+    return signal.istft(z, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None)
 
 def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None):
     """
