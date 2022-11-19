@@ -96,8 +96,44 @@ def psd(au, sr, channel=None, T=1.0, overlap=0.5):
     f, Pxx = signal.welch(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), axis=0)
     return f, Pxx
 
-def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
+class stft_class():
+
+    def __init__(self, T=0.1, overlap=0.75):
+        self.nperseg, self.noverlap = int(sr*T), int(sr*T*overlap)
+
+    def forward(self, au, sr, output='m'):
+        f, t, z = signal.stft(au, fs=sr, nperseg=self.nperseg, noverlap=self.noverlap, boundary=None, axis=0)
+        if output == 'm':
+            m = np.abs(z)
+            return f, t, m
+        elif output == 'm, p':
+            m = np.abs(z)
+            p = np.angle(z*np.exp((np.pi/2)*1.0j))
+            return f, t, m, p
+        elif output == 'z':
+            return f, t, z
+        elif output == 'r, i':
+            return f, t, z.real, z.imag
+        else:
+            raise ValueError('Parameter "output" has to be "m, p", "z" or "r, i".')
+
+    def inverse(self, sr, m, p=None):
+        shape = m.shape
+        if p == None:
+            p = np.unwrap(np.random.uniform(0, 2*np.pi, shape))
+        tanp = np.tan(p)
+        a = m/np.sqrt(1+np.square(tanp))
+        b = a*tanp
+        del tanp
+        z = np.empty(shape, dtype=np.complex128)
+        z.real, z.imag = a, b
+        del a, b
+        return signal.istft(z, fs=sr, nperseg=self.nperseg, noverlap=self.noverlap, boundary=None)
+    
+def stft(au, sr, T=0.1, overlap=0.75, output='m'):
     """
+    Only mono audio array is supported.
+
     Parameters:
     au: numpy.ndarray. Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. win_idxd audio needs to be converted to non-win_idxd audio first using other functions to have the right stft.
     sr: int. Sample rate of au.
@@ -115,13 +151,6 @@ def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
     z: if output='z'.
     z.real, z.imag: if output='r, i'.
     """
-    if channel != None:
-        if au.ndim == 2:
-            au = au[:, channel]
-        elif au.ndim == 1:
-            pass
-        else:
-            raise ValueError('The input audio array has no dimension, or more than 2 dimensions which means it may be a framed audio.')
     f, t, z = signal.stft(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None, axis=0)
     if output == 'm':
         m = np.abs(z)
@@ -137,7 +166,10 @@ def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
     else:
         raise ValueError('Parameter "output" has to be "m, p", "z" or "r, i".')
 
-def istft(sr, m, p=None, T=1.0, overlap=0.5):
+def istft(sr, m, p=None, T=0.1, overlap=0.75):
+    """
+    Only mono audio array is supported.
+    """
     shape = m.shape
     if p == None:
         p = np.unwrap(np.random.uniform(0, 2*np.pi, shape))
