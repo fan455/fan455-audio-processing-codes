@@ -24,37 +24,15 @@ def check_clipping(au):
     if np.amax(np.abs(au)) >= 1:
         raise ValueError('Clipping has occurred.')
 
-def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None):
-    """
-    Generate a pure sine wave for loudness testing.
-    f: float. Frequency.
-    phase: float. Initial phase.
-    A: float. Maxinum amplitude.
-    du: float, seconds. Duration of sinewave.
-    ls: float, seconds. Duration of leading silence.
-    ts: float, seconds. Duration of trailing silence.
-    """
-    t = np.arange(0, int(du*sr))/sr
-    y = A*np.sin(2*np.pi*f*t + phase)
-    if ls:
-        y = np.append(np.zeros(int(ls*sr)), y)
-    if ts:
-        y = np.append(y, np.zeros(int(ts*sr)))
-    size = y.size
-    if stereo:
-        return np.broadcast_to(y.reshape(size, 1), (size, 2))
-    else:
-        return y
-
 class Mlufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
     def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0):
         """
-        sr: float. Sample rate for audio. If you want to process different sample rates, you need to set more than 1 meters.
-        T: float, seconds. Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
-        overlap: float, proportion. Proportion of overlapping between windows.
-        cut_start: float, seconds. The start seconds to only analyze.
-        threshold: float, LUFS or LKFS. If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
+        sr: float (Hz). Sample rate for audio. If you want to process different sample rates, you need to set more than 1 meters.
+        T: float (seconds). Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
+        overlap: float (fraction). Proportion of overlapping between windows.
+        cut_start: float (seconds). The start seconds to only analyze.
+        threshold: float (LUFS or LKFS). If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
         Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
         """
         self.sr, self.T, self.overlap, self.threshold = sr, T, overlap, threshold
@@ -157,10 +135,10 @@ class Ilufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
     def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0):
         """
-        sr: float. Sample rate for audio. If you want to process different sample rates, you need to set more than 1 meters.
-        T: float, seconds. Time length of each window. It means the same as 'gating' in the ITU doc.
-        overlap: float, proportion. Proportion of overlapping between windows.
-        threshold: float, LUFS or LKFS. If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
+        sr: float (Hz). Sample rate for audio. If you want to process different sample rates, you need to set more than 1 meters.
+        T: float (seconds). Time length of each window. It means the same as 'gating' in the ITU doc.
+        overlap: float (fraction). Proportion of overlapping between windows.
+        threshold: float (LUFS or LKFS). If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
         Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a 5-channel audio input.
         """
         self.sr, self.T, self.overlap, self.threshold = sr, T, overlap, threshold
