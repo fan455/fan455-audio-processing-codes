@@ -29,8 +29,8 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
     """
     Parameters
     au: ndarray. Needs to have mono shape (samples_num, ) or multi-channel shape (samples_num, channels_num)
-    sr: float, Hz. Sample rate of input audio array.
-    T: float, seconds. Time length of each window.
+    sr: float (Hz). Sample rate of input audio array.
+    T: float (seconds). Time length of each window.
     overlap: float, proportion. Proportion of overlapping between windows.
     win: str. The window to apply to every frame.
 
@@ -51,6 +51,8 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
             au_f = np.append(au_f, au[:, i*hop: i*hop+step, :], axis=0)
         if win == 'rectangular':
             pass
+        elif win == 'kaiser':
+            au_f *= np.kaiser(step, 14).reshape((1, step, 1))
         elif win == 'hanning':
             au_f *= np.hanning(step).reshape((1, step, 1))
         elif win == 'hamming':
@@ -101,12 +103,13 @@ def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
     sr: int. Sample rate of au.
     channel: int. If au has 2 dimensions, which channel to do stft. 0 represents the first channel. None will stft all the channels sepatately.
     output: str. 'm' will return a magnitudes array (zero or positive real values). 'm, p' will return two magnitudes and phases arrays. 'z' will return a complex array, the same as scipy. 'r, i' will return two real and imaginary arrays derived from the complex array.
-    T: float, seconds. Time length of a each window. 
+    T: float (seconds). Time length of a each window. 
     overlap: float between 0 and 1. Overlap proportion between each two adjacent windows. 
     
     Returns:
-    f: as scipy.signal.stft returns.
-    t: as scipy.signal.stft returns.
+    f: 1d array. As scipy.signal.stft returns.
+    t: 1d array. As scipy.signal.stft returns.
+    shape(f.size, t.size) array(s):
     m: if output='m'.
     m, p: if output='m, p'.
     z: if output='z'.
@@ -133,6 +136,46 @@ def stft(au, sr, channel=None, output='m', T=1.0, overlap=0.5):
         return f, t, z.real, z.imag
     else:
         raise ValueError('Parameter "output" has to be "m, p", "z" or "r, i".')
+
+def istft(m, p=None, T=1.0, overlap=0.5):
+    shape = m.shape
+    if p == None:
+        p = np.unwrap(np.random.uniform(0, 2*np.pi, shape))
+    tanp = np.tan(p)
+    a = m/np.sqrt(1+np.square(tanp))
+    b = a*tanp
+    del tanp
+    z = np.empty(shape, dtype=np.complex128)
+    z.real, z.imag = a, b
+    del a, b
+    return signal.istft(z, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None)
+
+def get_white_noise(sr, du, A=0.5, ls=None, ts=None, stereo=False):
+    size = int(sr*du)
+    if stereo == False: # mono
+        noise = A*np.random.uniform(-1, 1, size)
+        if ls:
+            noise = np.append(np.zeros(int(sr*ls)), noise)
+        if ts:
+            noise = np.append(noise, np.zeros(int(sr*ts)))
+    else:
+        noise = A*np.random.uniform(-1, 1, 2*size).reshape((size, 2))
+        if ls:
+            noise = np.append(np.zeros((int(sr*ls), 2)), noise, axis=0)
+        if ts:
+            noise = np.append(noise, np.zeros((int(sr*ts), 2)), axis=0)
+    return noise
+
+def get_idx_array(y):
+    return np.arange(y.size)
+
+def sample2time(n, sr):
+    # start from 0
+    return n/sr
+
+def time2sample(t, sr):
+    # start from 0
+    return (sr*t).astype(np.int64)
 
 def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
