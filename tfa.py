@@ -137,7 +137,8 @@ class stft_class():
             raise ValueError('Parameter self._type has to be "m", "m, p", "z" or "z_r, z_i".')
         return au_re
 
-    def compensate_silence(self, au_re):
+    def compensate_ls(self, au_re):
+        # compensate for leading silence.
         if au_re.ndim == 2:
             return np.append(np.zeros((self.nperseg, 2)), au_re, axis=0)
         elif au.ndim == 1:
