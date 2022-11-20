@@ -26,77 +26,6 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
     sr_stretch = int(np.rint(sr_new/ratio))
     return resampy.resample(au, sr, sr_stretch, axis=0)
 
-def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
-    """
-    Parameters
-    au: ndarray. Needs to have mono shape (samples_num, ) or multi-channel shape (samples_num, channels_num)
-    sr: float (Hz). Sample rate of input audio array.
-    T: float (seconds). Time length of each window.
-    overlap: float, proportion. Proportion of overlapping between windows.
-    win: str. The window to apply to every frame.
-
-    Returns
-    au_f: ndarray. Framed audio with mono shape (window_num, samples) or multi-channel shape (window_num, samples_num, channels_num).
-    """
-    step, hop = int(sr*T), int(sr*T*(1-overlap))
-    if au.ndim == 2:
-        q1, q2 = divmod(au.shape[0], hop)
-        q3 = step - hop - q2
-        if q3 > 0:
-            au = np.append(au, np.zeros((q3, au.shape[-1])), axis=0)
-        elif q3 < 0:
-            raise ValueError('q3 < 0')
-        au = au.reshape((1, au.shape[0], au.shape[1]))
-        au_f = au[:, 0: step, :]
-        for i in range(1, q1):
-            au_f = np.append(au_f, au[:, i*hop: i*hop+step, :], axis=0)
-        if win == 'rectangular':
-            pass
-        elif win == 'kaiser':
-            au_f *= np.kaiser(step, 14).reshape((1, step, 1))
-        elif win == 'hanning':
-            au_f *= np.hanning(step).reshape((1, step, 1))
-        elif win == 'hamming':
-            au_f *= np.hamming(step).reshape((1, step, 1))
-        else:
-            raise ValueError(f'window "{win}" is not supported.')
-        return au_f
-    elif au.ndim == 1:
-        q1, q2 = divmod(au.shape[0], hop)
-        q3 = step - hop - q2
-        if q3 > 0:
-            au = np.append(au, np.zeros(q3), axis=0)
-        elif q3 < 0:
-            raise ValueError('q3 < 0')
-        au = au.reshape((1, au.shape[0]))
-        au_f = au[:, 0: step]
-        for i in range(1, q1):
-            au_f = np.append(au_f, au[:, i*hop: i*hop+step], axis=0)
-        if win == 'rectangular':
-            pass
-        elif win == 'kaiser':
-            au_f *= np.kaiser(step, 14).reshape((1, step))
-        elif win == 'hanning':
-            au_f *= np.hanning(step).reshape((1, step))
-        elif win == 'hamming':
-            au_f *= np.hamming(step).reshape((1, step))
-        else:
-            raise ValueError(f'window "{win}" is not supported.')
-        return au_f
-    else:
-        raise ValueError(f'au.ndim = {au.ndim} is not supported.')
-
-def psd(au, sr, channel=None, T=1.0, overlap=0.5):
-    if channel != None:
-        if au.ndim == 2:
-            au = au[:, channel]
-        elif au.ndim == 1:
-            pass
-        else:
-            raise ValueError('The input audio array has no dimension, or more than 2 dimensions which means it may be a framed audio.')
-    f, Pxx = signal.welch(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), axis=0)
-    return f, Pxx
-
 class stft_class():
 
     def __init__(self, sr, T=0.01, overlap=0.5, fft_ratio=2.5, win='hann', _type='m'):
@@ -220,7 +149,18 @@ class stft_class():
         print('reconstruction comparison:')
         print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
         print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
-    
+
+def psd(au, sr, channel=None, T=1.0, overlap=0.5):
+    if channel != None:
+        if au.ndim == 2:
+            au = au[:, channel]
+        elif au.ndim == 1:
+            pass
+        else:
+            raise ValueError('The input audio array has no dimension, or more than 2 dimensions which means it may be a framed audio.')
+    f, Pxx = signal.welch(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), axis=0)
+    return f, Pxx
+
 def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None):
     """
     Generate a pure sine wave for loudness testing.
@@ -307,3 +247,63 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, 
     pitch = F[np.argmax(M)]
     print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, {round(given_cent, 2)} cent band and {np.round(cent_step, 2)} cent step.')
     return pitch
+
+def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
+    """
+    Parameters
+    au: ndarray. Needs to have mono shape (samples_num, ) or multi-channel shape (samples_num, channels_num)
+    sr: float (Hz). Sample rate of input audio array.
+    T: float (seconds). Time length of each window.
+    overlap: float, proportion. Proportion of overlapping between windows.
+    win: str. The window to apply to every frame.
+
+    Returns
+    au_f: ndarray. Framed audio with mono shape (window_num, samples) or multi-channel shape (window_num, samples_num, channels_num).
+    """
+    step, hop = int(sr*T), int(sr*T*(1-overlap))
+    if au.ndim == 2:
+        q1, q2 = divmod(au.shape[0], hop)
+        q3 = step - hop - q2
+        if q3 > 0:
+            au = np.append(au, np.zeros((q3, au.shape[-1])), axis=0)
+        elif q3 < 0:
+            raise ValueError('q3 < 0')
+        au = au.reshape((1, au.shape[0], au.shape[1]))
+        au_f = au[:, 0: step, :]
+        for i in range(1, q1):
+            au_f = np.append(au_f, au[:, i*hop: i*hop+step, :], axis=0)
+        if win == 'rectangular':
+            pass
+        elif win == 'kaiser':
+            au_f *= np.kaiser(step, 14).reshape((1, step, 1))
+        elif win == 'hanning':
+            au_f *= np.hanning(step).reshape((1, step, 1))
+        elif win == 'hamming':
+            au_f *= np.hamming(step).reshape((1, step, 1))
+        else:
+            raise ValueError(f'window "{win}" is not supported.')
+        return au_f
+    elif au.ndim == 1:
+        q1, q2 = divmod(au.shape[0], hop)
+        q3 = step - hop - q2
+        if q3 > 0:
+            au = np.append(au, np.zeros(q3), axis=0)
+        elif q3 < 0:
+            raise ValueError('q3 < 0')
+        au = au.reshape((1, au.shape[0]))
+        au_f = au[:, 0: step]
+        for i in range(1, q1):
+            au_f = np.append(au_f, au[:, i*hop: i*hop+step], axis=0)
+        if win == 'rectangular':
+            pass
+        elif win == 'kaiser':
+            au_f *= np.kaiser(step, 14).reshape((1, step))
+        elif win == 'hanning':
+            au_f *= np.hanning(step).reshape((1, step))
+        elif win == 'hamming':
+            au_f *= np.hamming(step).reshape((1, step))
+        else:
+            raise ValueError(f'window "{win}" is not supported.')
+        return au_f
+    else:
+        raise ValueError(f'au.ndim = {au.ndim} is not supported.')
