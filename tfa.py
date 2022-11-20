@@ -5,6 +5,7 @@ import numpy as np
 from scipy import signal
 import resampy
 from pitch import cent2ratio
+from loudness import amp2db, db2amp
 
 def resample(au, sr, sr_new):
     return resampy.resample(au, sr, sr_new, axis=0)
@@ -98,16 +99,17 @@ def psd(au, sr, channel=None, T=1.0, overlap=0.5):
 
 class stft_class():
 
-    def __init__(self, sr, T=0.05, overlap=0.75, win='hann', _type='m'):
+    def __init__(self, sr, T=0.01, overlap=0.5, fft_ratio=2.5, win='hann', _type='m'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
         T: float (seconds). Time length of a each window. 
-        overlap: float (fraction between 0 and 1). Overlap proportion between each two adjacent windows.
+        overlap: float (ratio between 0 and 1). Overlap ratio between each two adjacent windows.
+        fft_ratio: float (ratio >= 1). The fft ratio relative to T.
         win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
         _type: str ('m', 'm, p', 'z' or 'z_r, z_i'). Please refer to the illustration of the returns of self.forward().
         """
-        self.sr, self.nperseg, self.noverlap, self.win, self._type = sr, int(sr*T), int(sr*T*overlap), win, _type
+        self.sr, self.nperseg, self.noverlap, self.nfft, self.win, self._type = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio), win, _type
 
     def forward(self, au):
         """
@@ -124,7 +126,7 @@ class stft_class():
         z: if self._type='z'. The complex array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         z.real, z.imag: if self._type='z_r, z_i'. The complex array' real array and imaginary array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         """
-        f, t, z = signal.stft(au, fs=self.sr, nperseg=self.nperseg, noverlap=self.noverlap, window=self.win, axis=0)
+        f, t, z = signal.stft(au, fs=self.sr, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, window=self.win, axis=0)
         z = z.swapaxes(1, -1)
         print(f'au.shape = {au.shape}')
         print(f'f.shape = {f.shape}')
@@ -179,7 +181,7 @@ class stft_class():
             del in_tup
         else:
             raise ValueError('Parameter self._type has to be "m", "m, p", "z" or "z_r, z_i".')
-        t, au_re = signal.istft(z, fs=self.sr, nperseg=self.nperseg, noverlap=self.noverlap, window=self.win, time_axis=1, freq_axis=0)
+        t, au_re = signal.istft(z, fs=self.sr, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, window=self.win, time_axis=1, freq_axis=0)
         print(f'au_re.shape = {au_re.shape}')
         return au_re
 
@@ -206,18 +208,18 @@ class stft_class():
             raise ValueError('Parameter self._type has to be "m", "m, p", "z" or "z_r, z_i".')
         return au_re
 
-    def re_ls(self, au):
-        # Compensate for leading silence. The return array has the same shape and size as self.re().
-        if au.ndim == 2:
-            au = np.append(np.zeros((self.nperseg, 2)), au, axis=0)
-            au_re = self.re(au)
-            return au_re[self.nperseg:, :]
+    def compensate_silence(self, au_re):
+        if au_re.ndim == 2:
+            return np.append(np.zeros((self.nperseg, 2)), au_re, axis=0)
         elif au.ndim == 1:
-            au = np.append(np.zeros(self.nperseg), au)
-            au_re = self.re(au)
-            return au_re[self.nperseg:]
+            return np.append(np.zeros(self.nperseg), au_re)
         else:
-            raise ValueError('au.ndim != 1 or 2')
+            raise ValueError('au.ndim != 1 or 2')        
+
+    def re_compare(self, au, au_re):
+        print('reconstruction comparison:')
+        print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
+        print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
     
 def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None):
     """
