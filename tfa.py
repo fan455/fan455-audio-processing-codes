@@ -28,7 +28,7 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
 
 class stft_class():
 
-    def __init__(self, sr, T=0.01, overlap=0.5, fft_ratio=2.5, win='hann', _type='m'):
+    def __init__(self, sr, T=0.01, overlap=0.75, fft_ratio=5.0, win='hann', _type='m'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
@@ -38,7 +38,8 @@ class stft_class():
         win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
         _type: str ('m', 'm, p', 'z' or 'z_r, z_i'). Please refer to the illustration of the returns of self.forward().
         """
-        self.sr, self.nperseg, self.noverlap, self.nfft, self.win, self._type = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio), win, _type
+        self.sr, self.nperseg, self.noverlap, self.nfft = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio)
+        self.win, self._type = signal.windows.get_window(win, self.nperseg, fftbins=True), _type
 
     def forward(self, au):
         """
@@ -91,7 +92,10 @@ class stft_class():
             m = in_tup
             del in_tup
             shape = m.shape
-            p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape), axis=1) # this uses random phase.
+            #p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape), axis=1) # this uses random phase.
+            p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape[:2]), axis=1)
+            if len(shape) == 3:
+                p = np.stack([p, p], axis=-1)
             z = np.empty(shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
         elif self._type == 'm, p':
