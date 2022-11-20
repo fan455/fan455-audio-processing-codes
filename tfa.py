@@ -98,60 +98,100 @@ def psd(au, sr, channel=None, T=1.0, overlap=0.5):
 
 class stft_class():
 
-    def __init__(self, T=0.1, overlap=0.75):
-        self.nperseg, self.noverlap = int(sr*T), int(sr*T*overlap)
+    def __init__(self, sr, T=0.05, overlap=0.75, win='hann'):
+        """
+        Only mono audio array is supported.
 
-    def forward(self, au, sr, output='m'):
-        f, t, z = signal.stft(au, fs=sr, nperseg=self.nperseg, noverlap=self.noverlap, boundary=None, axis=0)
-        if output == 'm':
+        Parameters:
+        au: numpy.ndarray. Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. win_idxd audio needs to be converted to non-win_idxd audio first using other functions to have the right stft.
+        sr: int. Sample rate of au.
+        channel: int. If au has 2 dimensions, which channel to do stft. 0 represents the first channel. None will stft all the channels sepatately.
+        output: str. 'm' will return a magnitudes array (zero or positive real values). 'm, p' will return two magnitudes and phases arrays. 'z' will return a complex array, the same as scipy. 'r, i' will return two real and imaginary arrays derived from the complex array.
+        T: float (seconds). Time length of a each window. 
+        overlap: float between 0 and 1. Overlap proportion between each two adjacent windows. 
+        """
+        self.sr, self.nperseg, self.noverlap, self.win = sr, int(sr*T), int(sr*T*overlap), win
+
+    def forward(self, au, out_type='m'):
+        """
+        Returns:
+        f: 1d array. As scipy.signal.stft returns.
+        t: 1d array. As scipy.signal.stft returns.
+        shape(f.size, t.size) array(s):
+        m: if output='m'.
+        m, p: if output='m, p'.
+        z: if output='z'.
+        z.real, z.imag: if output='z_r, z_i'.
+        """
+        f, t, z = signal.stft(au, fs=self.sr, nperseg=self.nperseg, noverlap=self.noverlap, window=self.win, axis=0)
+        z = z.swapaxes(1, -1)
+        print(f'z.shape = {z.shape}')
+        if out_type == 'm':
             m = np.abs(z)
             return f, t, m
-        elif output == 'm, p':
-            m = np.abs(z)
-            p = np.angle(z*np.exp((np.pi/2)*1.0j))
+        elif out_type == 'm, p':
+            m, p = np.abs(z), np.angle(z)
+            #m, p = np.abs(z), np.angle(z*np.exp((np.pi/2)*1.0j))
+            print(f'f.shape = {f.shape}')
+            print(f't.shape = {t.shape}')
+            print(f'm.shape = {m.shape}')
+            print(f'p.shape = {p.shape}')
             return f, t, m, p
-        elif output == 'z':
+        elif out_type == 'z':
             return f, t, z
-        elif output == 'r, i':
+        elif out_type == 'z_r, z_i':
             return f, t, z.real, z.imag
         else:
-            raise ValueError('Parameter "output" has to be "m, p", "z" or "r, i".')
+            raise ValueError('Parameter "out_type" has to be "m", "m, p", "z" or "z_r, z_i".')
 
-    def inverse(self, sr, m, p=None):
-        shape = m.shape
-        if p == None:
-            p = np.unwrap(np.random.uniform(0, 2*np.pi, shape))
-        tanp = np.tan(p)
-        a = m/np.sqrt(1+np.square(tanp))
-        b = a*tanp
-        del tanp
-        z = np.empty(shape, dtype=np.complex128)
-        z.real, z.imag = a, b
-        del a, b
-        return signal.istft(z, fs=sr, nperseg=self.nperseg, noverlap=self.noverlap, boundary=None)
+    def inverse(self, in_tup, in_type='m'):
+        if in_type == 'm':
+            m = in_tup
+            del in_tup
+            shape = m.shape
+            p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape), axis=1) # this uses random phase.
+            z = np.empty(shape, dtype=np.complex128)
+            z.real, z.imag = m*np.cos(p), m*np.sin(p)
+        elif in_type == 'm, p':
+            m, p = in_tup
+            del in_tup
+            shape = m.shape
+            z = np.empty(shape, dtype=np.complex128)
+            z.real, z.imag = m*np.cos(p), m*np.sin(p)
+        elif in_type == 'z':
+            z = in_tup
+            del in_tup
+        elif in_type == 'z_r, z_i':
+            shape = in_tup[0].shape
+            z = np.empty(shape, dtype=np.complex128)
+            z.real, z.imag = in_tup
+            del in_tup
+        else:
+            raise ValueError('Parameter "in_type" has to be "m", "m, p", "z" or "z_r, z_i".')
+        t, au = signal.istft(z, fs=self.sr, nperseg=self.nperseg, noverlap=self.noverlap, window=self.win, time_axis=1, freq_axis=0)
+        print(f'au.shape = {au.shape}')
+        return au
+
+    def re(self, au, re_type='m, p'):
+        if re_type == 'm':
+            f, t, m = self.forward(au, out_type=re_type)
+            au_re = self.inverse(m, in_type=re_type)           
+        elif re_type == 'm, p':
+            f, t, m, p = self.forward(au, out_type=re_type)
+            au_re = self.inverse((m, p), in_type=re_type)
+        elif re_type == 'z':
+            f, t, z = self.forward(au, out_type=re_type)
+            au_re = self.inverse(z, in_type=re_type)
+        elif re_type == 'z_r, z_i':
+            f, t, z_r, z_i = self.forward(au, out_type=re_type)
+            au_re = self.inverse((z_r, z_i), in_type=re_type)
+        else:
+            raise ValueError('Parameter "re_type" has to be "m", "m, p", "z" or "z_r, z_i".')
+        return au_re
     
 def stft(au, sr, T=0.1, overlap=0.75, output='m'):
-    """
-    Only mono audio array is supported.
 
-    Parameters:
-    au: numpy.ndarray. Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. win_idxd audio needs to be converted to non-win_idxd audio first using other functions to have the right stft.
-    sr: int. Sample rate of au.
-    channel: int. If au has 2 dimensions, which channel to do stft. 0 represents the first channel. None will stft all the channels sepatately.
-    output: str. 'm' will return a magnitudes array (zero or positive real values). 'm, p' will return two magnitudes and phases arrays. 'z' will return a complex array, the same as scipy. 'r, i' will return two real and imaginary arrays derived from the complex array.
-    T: float (seconds). Time length of a each window. 
-    overlap: float between 0 and 1. Overlap proportion between each two adjacent windows. 
-    
-    Returns:
-    f: 1d array. As scipy.signal.stft returns.
-    t: 1d array. As scipy.signal.stft returns.
-    shape(f.size, t.size) array(s):
-    m: if output='m'.
-    m, p: if output='m, p'.
-    z: if output='z'.
-    z.real, z.imag: if output='r, i'.
-    """
-    f, t, z = signal.stft(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None, axis=0)
+    f, t, z = signal.stft(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap))
     if output == 'm':
         m = np.abs(z)
         return f, t, m
@@ -180,7 +220,7 @@ def istft(sr, m, p=None, T=0.1, overlap=0.75):
     z = np.empty(shape, dtype=np.complex128)
     z.real, z.imag = a, b
     del a, b
-    return signal.istft(z, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), boundary=None)
+    return signal.istft(z, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap))
 
 def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None):
     """
