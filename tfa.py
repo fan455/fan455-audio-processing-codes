@@ -231,7 +231,7 @@ def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
         if ts:
             noise = np.append(noise, np.zeros(int(sr*ts)))
     else:
-        noise = A*(np.random.uniform(-1, 1, 2*size).reshape((size, 2)))
+        noise = A*np.random.uniform(-1, 1, 2*size).reshape((size, 2))
         if win:
             win = signal.get_window(win[0], 2*win[1])
             win = np.insert(win, win[1], np.ones(size-2*win[1]))
@@ -305,14 +305,14 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, 
     print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, {round(given_cent, 2)} cent band and {np.round(cent_step, 2)} cent step.')
     return pitch
 
-def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
+def get_framed(au, sr, T=0.4, overlap=0.75, win='hamming'):
     """
     Parameters
     au: ndarray. Needs to have mono shape (samples_num, ) or multi-channel shape (samples_num, channels_num)
     sr: float (Hz). Sample rate of input audio array.
     T: float (seconds). Time length of each window.
     overlap: float, proportion. Proportion of overlapping between windows.
-    win: str. The window to apply to every frame.
+    win: str or tuple. The window to apply to every frame. No need to provide window size. Please refer to scipy.signal.get_windows.
 
     Returns
     au_f: ndarray. Framed audio with mono shape (window_num, samples) or multi-channel shape (window_num, samples_num, channels_num).
@@ -329,16 +329,8 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
         au_f = au[:, 0: step, :]
         for i in range(1, q1):
             au_f = np.append(au_f, au[:, i*hop: i*hop+step, :], axis=0)
-        if win == 'rectangular':
-            pass
-        elif win == 'kaiser':
-            au_f *= np.kaiser(step, 14).reshape((1, step, 1))
-        elif win == 'hanning':
-            au_f *= np.hanning(step).reshape((1, step, 1))
-        elif win == 'hamming':
-            au_f *= np.hamming(step).reshape((1, step, 1))
-        else:
-            raise ValueError(f'window "{win}" is not supported.')
+        if win:
+            au_f *= signal.get_window(win, step).reshape((1, step, 1))
         return au_f
     elif au.ndim == 1:
         q1, q2 = divmod(au.shape[0], hop)
@@ -351,16 +343,8 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='rectangular'):
         au_f = au[:, 0: step]
         for i in range(1, q1):
             au_f = np.append(au_f, au[:, i*hop: i*hop+step], axis=0)
-        if win == 'rectangular':
-            pass
-        elif win == 'kaiser':
-            au_f *= np.kaiser(step, 14).reshape((1, step))
-        elif win == 'hanning':
-            au_f *= np.hanning(step).reshape((1, step))
-        elif win == 'hamming':
-            au_f *= np.hamming(step).reshape((1, step))
-        else:
-            raise ValueError(f'window "{win}" is not supported.')
+        if win:
+            au_f *= signal.get_window(win, step).reshape((1, step))
         return au_f
     else:
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
