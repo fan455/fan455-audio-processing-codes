@@ -179,43 +179,82 @@ def psd(au, sr, channel=None, T=1.0, overlap=0.5):
     f, Pxx = signal.welch(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), axis=0)
     return f, Pxx
 
-def get_sinewave(sr, du, f, phase=0, A=1, stereo=True, ls=None, ts=None):
+def get_sinewave(sr, du, f, phase=0, A=0.5, win=None, stereo=False, ls=None, ts=None):
     """
-    Generate a pure sine wave for loudness testing.
+    Generate a pure sine wave for testing.
+    sr: int (Hz). Sample rate.
+    du: float (seconds). Duration of sinewave.
     f: float (Hz). Frequency.
     phase: float (rad angle). Initial phase.
     A: float (amp). Maxinum amplitude.
-    du: float (seconds). Duration of sinewave.
+    win: tuple (win_tuple or win_str, win_size). win_tuple or win_str as scipy.signal.get_windows, win_size=Nx/2.
     ls: float (seconds). Duration of leading silence.
     ts: float (seconds). Duration of trailing silence.
+    stereo: bool. If true, return a 2d array. If false, return a 1d array.
     """
-    t = np.arange(0, int(du*sr))/sr
+    size = int(sr*du)
+    t = np.arange(0, size)/sr
     y = A*np.sin(2*np.pi*f*t + phase)
+    if win:
+        win = signal.get_window(win[0], 2*win[1])
+        win = np.insert(win, win[1], np.ones(size-2*win[1]))
+        y *= win
     if ls:
         y = np.append(np.zeros(int(ls*sr)), y)
     if ts:
         y = np.append(y, np.zeros(int(ts*sr)))
-    size = y.size
     if stereo:
         return np.broadcast_to(y.reshape((size, 1)), (size, 2))
     else:
         return y
     
-def get_white_noise(sr, du, A=0.5, ls=None, ts=None, stereo=False):
+def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
+    """
+    Generate a uniform white noise signal for testing.
+    sr: int (Hz). Sample rate.
+    du: float (seconds). Duration of sinewave.
+    A: float (amp). Maxinum amplitude.
+    win: tuple (win_tuple or win_str, win_size). win_tuple or win_str as scipy.signal.get_windows, win_size=Nx/2.
+    ls: float (seconds). Duration of leading silence.
+    ts: float (seconds). Duration of trailing silence.
+    stereo: bool. If true, return a 2d array. If false, return a 1d array.
+    """
     size = int(sr*du)
     if stereo == False: # mono
         noise = A*np.random.uniform(-1, 1, size)
+        if win:
+            win = signal.get_window(win[0], 2*win[1])
+            win = np.insert(win, win[1], np.ones(size-2*win[1]))
+            noise *= win
         if ls:
             noise = np.append(np.zeros(int(sr*ls)), noise)
         if ts:
             noise = np.append(noise, np.zeros(int(sr*ts)))
     else:
-        noise = A*np.random.uniform(-1, 1, 2*size).reshape((size, 2))
+        noise = A*(np.random.uniform(-1, 1, 2*size).reshape((size, 2)))
+        if win:
+            win = signal.get_window(win[0], 2*win[1])
+            win = np.insert(win, win[1], np.ones(size-2*win[1]))
+            win = np.broadcast_to(win.reshape((size, 1)), (size, 2))
+            noise *= win      
         if ls:
             noise = np.append(np.zeros((int(sr*ls), 2)), noise, axis=0)
         if ts:
             noise = np.append(noise, np.zeros((int(sr*ts), 2)), axis=0)
     return noise
+
+def get_silence(sr, du, stereo=False):
+    """
+    Generate a silence signal for testing.
+    sr: int (Hz). Sample rate.
+    du: float (seconds). Duration of sinewave.
+    stereo: bool. If true, return a 2d array. If false, return a 1d array.
+    """
+    size = int(sr*du)
+    if stereo == False:
+        return np.zeros(size)
+    else:
+        return np.zeros((size, 2))
 
 def get_idx_array(y):
     return np.arange(y.size)
