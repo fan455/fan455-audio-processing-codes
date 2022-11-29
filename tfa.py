@@ -187,7 +187,9 @@ def get_sinewave(sr, du, f, phase=0, A=0.5, win=None, stereo=False, ls=None, ts=
     f: float (Hz). Frequency.
     phase: float (rad angle). Initial phase.
     A: float (amp). Maxinum amplitude.
-    win: tuple (win_tuple or win_str, win_size). win_tuple or win_str as scipy.signal.get_windows, win_size=Nx/2.
+    win: tuple (win_tuple or win_str, win_size).
+        win_tuple or win_str: as scipy.signal.get_windows.
+        win_du: float (seconds). Duration of the start and end window (half).
     ls: float (seconds). Duration of leading silence.
     ts: float (seconds). Duration of trailing silence.
     stereo: bool. If true, return a 2d array. If false, return a 1d array.
@@ -196,8 +198,9 @@ def get_sinewave(sr, du, f, phase=0, A=0.5, win=None, stereo=False, ls=None, ts=
     t = np.arange(0, size)/sr
     y = A*np.sin(2*np.pi*f*t + phase)
     if win:
-        win = signal.get_window(win[0], 2*win[1])
-        win = np.insert(win, win[1], np.ones(size-2*win[1]))
+        win_size = int(sr*win[1])
+        win = signal.get_window(win[0], 2*win_size)
+        win = np.insert(win, win_size, np.ones(size-2*win_size))
         y *= win
     if ls:
         y = np.append(np.zeros(int(ls*sr)), y)
@@ -214,7 +217,9 @@ def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
     sr: int (Hz). Sample rate.
     du: float (seconds). Duration of sinewave.
     A: float (amp). Maxinum amplitude.
-    win: tuple (win_tuple or win_str, win_size). win_tuple or win_str as scipy.signal.get_windows, win_size=Nx/2.
+    win: tuple (win_tuple or win_str, win_size).
+        win_tuple or win_str: as scipy.signal.get_windows.
+        win_du: float (seconds). Duration of the start and end window (half).
     ls: float (seconds). Duration of leading silence.
     ts: float (seconds). Duration of trailing silence.
     stereo: bool. If true, return a 2d array. If false, return a 1d array.
@@ -223,18 +228,20 @@ def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
     if stereo == False: # mono
         noise = A*np.random.uniform(-1, 1, size)
         if win:
-            win = signal.get_window(win[0], 2*win[1])
-            win = np.insert(win, win[1], np.ones(size-2*win[1]))
+            win_size = int(sr*win[1])
+            win = signal.get_window(win[0], 2*win_size)
+            win = np.insert(win, win_size, np.ones(size-2*win_size))
             noise *= win
         if ls:
             noise = np.append(np.zeros(int(sr*ls)), noise)
         if ts:
             noise = np.append(noise, np.zeros(int(sr*ts)))
     else:
-        noise = A*np.random.uniform(-1, 1, 2*size).reshape((size, 2))
+        noise = A*(np.random.uniform(-1, 1, 2*size).reshape((size, 2)))
         if win:
-            win = signal.get_window(win[0], 2*win[1])
-            win = np.insert(win, win[1], np.ones(size-2*win[1]))
+            win_size = int(sr*win[1])
+            win = signal.get_window(win[0], 2*win_size)
+            win = np.insert(win, win_size, np.ones(size-2*win_size))
             win = np.broadcast_to(win.reshape((size, 1)), (size, 2))
             noise *= win      
         if ls:
