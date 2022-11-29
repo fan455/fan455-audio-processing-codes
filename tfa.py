@@ -28,7 +28,7 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
 
 class stft_class():
 
-    def __init__(self, sr, T=0.01, overlap=0.75, fft_ratio=5.0, win='hann', _type='m'):
+    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', _type='m, p', random_phase_type='consistent'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
@@ -39,7 +39,9 @@ class stft_class():
         _type: str ('m', 'm, p', 'z' or 'z_r, z_i'). Please refer to the illustration of the returns of self.forward().
         """
         self.sr, self.nperseg, self.noverlap, self.nfft = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio)
+        self.hop = self.nperseg - self.noverlap
         self.win, self._type = signal.windows.get_window(win, self.nperseg, fftbins=True), _type
+        self.random_phase_type = random_phase_type
 
     def forward(self, au):
         """
@@ -67,7 +69,7 @@ class stft_class():
             print(f'm.shape = {m.shape}')
             return f, t, m
         elif self._type == 'm, p':
-            m, p = np.abs(z), np.angle(z)
+            m, p = np.abs(z), np.angle(z*np.exp(0.5*np.pi*1.0j))
             print(f'm.shape = {m.shape}')
             print(f'p.shape = {p.shape}')
             return f, t, m, p
@@ -78,7 +80,7 @@ class stft_class():
         else:
             raise ValueError('Parameter self._type has to be "m", "m, p", "z" or "z_r, z_i".')
 
-    def inverse(self, in_tup):
+    def inverse(self, in_tup, f=None):
         """
         Inverse Short-Time Fourier Transform
 
@@ -93,7 +95,16 @@ class stft_class():
             del in_tup
             shape = m.shape
             #p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape), axis=1) # this uses random phase.
-            p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape[:2]), axis=1)
+            #p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape[:2]), axis=1)
+            if self.random_phase_type == 'consistent':
+                p1 = 2*np.pi*np.random.uniform(0, 1, shape[0]).reshape((shape[0], 1))
+                p = p1
+                f = f.reshape((f.size, 1))
+                c1, c2 = (self.hop+1)*f/self.sr, -0.5/np.pi # not sure if self.hop+1 is right...
+                for i in range(1, shape[1]):
+                    p1 = 2*np.pi*np.remainder(c1+c2*p1, 1)
+                    p = np.append(p, p1, axis=1)
+                p -= np.pi
             if len(shape) == 3:
                 p = np.stack([p, p], axis=-1)
             z = np.empty(shape, dtype=np.complex128)
@@ -101,9 +112,11 @@ class stft_class():
         elif self._type == 'm, p':
             m, p = in_tup
             del in_tup
+            p -= 0.5*np.pi
             shape = m.shape
             z = np.empty(shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
+            #z *= np.exp(-0.5*np.pi*1.0j)
         elif self._type == 'z':
             z = in_tup
             del in_tup
@@ -127,7 +140,7 @@ class stft_class():
         """
         if self._type == 'm':
             f, t, m = self.forward(au)
-            au_re = self.inverse(m)           
+            au_re = self.inverse(m, f)           
         elif self._type == 'm, p':
             f, t, m, p = self.forward(au)
             au_re = self.inverse((m, p))
