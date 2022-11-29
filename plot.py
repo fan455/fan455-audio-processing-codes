@@ -209,7 +209,7 @@ def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
         if ts:
             noise = np.append(noise, np.zeros(int(sr*ts)))
     else:
-        noise = A*(np.random.uniform(-1, 1, (size, 2))    
+        noise = A*np.random.uniform(-1, 1, (size, 2))    
         if ls:
             noise = np.append(np.zeros((int(sr*ls), 2)), noise, axis=0)
         if ts:
