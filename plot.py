@@ -28,7 +28,7 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
 
 class stft_class():
 
-    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', _type='m, p', random_phase_type='consistent'):
+    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', _type='m, p', random_phase_type='inconsistent'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
@@ -94,9 +94,9 @@ class stft_class():
             m = in_tup
             del in_tup
             shape = m.shape
-            #p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape), axis=1) # this uses random phase.
-            #p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape[:2]), axis=1)
-            if self.random_phase_type == 'consistent':
+            if self.random_phase_type == 'inconsistent':
+                p = np.pi*np.random.uniform(-1, 1, shape[:2]) # this uses random phase.
+            elif self.random_phase_type == 'consistent':
                 p1 = 2*np.pi*np.random.uniform(0, 1, shape[0]).reshape((shape[0], 1))
                 p = p1
                 f = f.reshape((f.size, 1))
@@ -104,7 +104,6 @@ class stft_class():
                 for i in range(1, shape[1]):
                     p1 = 2*np.pi*np.remainder(c1+c2*p1, 1)
                     p = np.append(p, p1, axis=1)
-                p -= np.pi
             if len(shape) == 3:
                 p = np.stack([p, p], axis=-1)
             z = np.empty(shape, dtype=np.complex128)
@@ -210,7 +209,7 @@ def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
         if ts:
             noise = np.append(noise, np.zeros(int(sr*ts)))
     else:
-        noise = A*(np.random.uniform(-1, 1, 2*size).reshape((size, 2)))    
+        noise = A*(np.random.uniform(-1, 1, (size, 2))    
         if ls:
             noise = np.append(np.zeros((int(sr*ls), 2)), noise, axis=0)
         if ts:
