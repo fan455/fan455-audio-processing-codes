@@ -179,7 +179,7 @@ def psd(au, sr, channel=None, T=1.0, overlap=0.5):
     f, Pxx = signal.welch(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), axis=0)
     return f, Pxx
 
-def get_sinewave(f, phase=0, A=1, du=1, sr=48000, stereo=True, ls=None, ts=None):
+def get_sinewave(sr, du, f, phase=0, A=1, stereo=True, ls=None, ts=None):
     """
     Generate a pure sine wave for loudness testing.
     f: float (Hz). Frequency.
