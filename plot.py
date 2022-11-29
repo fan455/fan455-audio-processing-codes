@@ -16,6 +16,18 @@ def plot_xy(x, y, title='title', x_label='x', y_label='y'):
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
 
+def plot_au_mono(au, sr, title='title'):
+    t = np.arange(0, au.size)/sr
+    fig, ax = plt.subplots()
+    fig.patch.set_facecolor('#D1DDC5')
+    ax.patch.set_facecolor('#D1DDC5')
+    ax.plot(t, au)
+    ax.set_title(title)
+    plt.xlabel('time')
+    plt.ylabel('amplitude')
+    ax.grid(color='grey', linewidth='1', linestyle='-.')
+    plt.show()
+
 def plot_y(y, title='title', x_label='x', y_label='y'):
     """
     x is the index of y.
