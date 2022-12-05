@@ -28,7 +28,7 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
 
 class stft_class():
 
-    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', _type='m, p', random_phase_type='consistent'):
+    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', _type='m, p', random_phase_type='inconsistent'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
@@ -94,9 +94,9 @@ class stft_class():
             m = in_tup
             del in_tup
             shape = m.shape
-            #p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape), axis=1) # this uses random phase.
-            #p = np.unwrap(np.pi*np.random.uniform(-1, 1, shape[:2]), axis=1)
-            if self.random_phase_type == 'consistent':
+            if self.random_phase_type == 'inconsistent':
+                p = np.pi*np.random.uniform(-1, 1, shape[:2]) # this uses random phase.
+            elif self.random_phase_type == 'consistent':
                 p1 = 2*np.pi*np.random.uniform(0, 1, shape[0]).reshape((shape[0], 1))
                 p = p1
                 f = f.reshape((f.size, 1))
@@ -104,7 +104,6 @@ class stft_class():
                 for i in range(1, shape[1]):
                     p1 = 2*np.pi*np.remainder(c1+c2*p1, 1)
                     p = np.append(p, p1, axis=1)
-                p -= np.pi
             if len(shape) == 3:
                 p = np.stack([p, p], axis=-1)
             z = np.empty(shape, dtype=np.complex128)
@@ -168,18 +167,7 @@ class stft_class():
         print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
         print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
 
-def psd(au, sr, channel=None, T=1.0, overlap=0.5):
-    if channel != None:
-        if au.ndim == 2:
-            au = au[:, channel]
-        elif au.ndim == 1:
-            pass
-        else:
-            raise ValueError('The input audio array has no dimension, or more than 2 dimensions which means it may be a framed audio.')
-    f, Pxx = signal.welch(au, fs=sr, nperseg=int(sr*T), noverlap=int(sr*T*overlap), axis=0)
-    return f, Pxx
-
-def get_sinewave(sr, du, f, phase=0, A=0.5, win=None, stereo=False, ls=None, ts=None):
+def get_sinewave(sr, du, f, phase=0, A=0.5, stereo=False, ls=None, ts=None):
     """
     Generate a pure sine wave for testing.
     sr: int (Hz). Sample rate.
@@ -187,9 +175,6 @@ def get_sinewave(sr, du, f, phase=0, A=0.5, win=None, stereo=False, ls=None, ts=
     f: float (Hz). Frequency.
     phase: float (rad angle). Initial phase.
     A: float (amp). Maxinum amplitude.
-    win: tuple (win_tuple or win_str, win_size).
-        win_tuple or win_str: as scipy.signal.get_windows.
-        win_du: float (seconds). Duration of the start and end window (half).
     ls: float (seconds). Duration of leading silence.
     ts: float (seconds). Duration of trailing silence.
     stereo: bool. If true, return a 2d array. If false, return a 1d array.
@@ -197,11 +182,6 @@ def get_sinewave(sr, du, f, phase=0, A=0.5, win=None, stereo=False, ls=None, ts=
     size = int(sr*du)
     t = np.arange(0, size)/sr
     y = A*np.sin(2*np.pi*f*t + phase)
-    if win:
-        win_size = int(sr*win[1])
-        win = signal.get_window(win[0], 2*win_size)
-        win = np.insert(win, win_size, np.ones(size-2*win_size))
-        y *= win
     if ls:
         y = np.append(np.zeros(int(ls*sr)), y)
     if ts:
@@ -217,9 +197,6 @@ def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
     sr: int (Hz). Sample rate.
     du: float (seconds). Duration of sinewave.
     A: float (amp). Maxinum amplitude.
-    win: tuple (win_tuple or win_str, win_size).
-        win_tuple or win_str: as scipy.signal.get_windows.
-        win_du: float (seconds). Duration of the start and end window (half).
     ls: float (seconds). Duration of leading silence.
     ts: float (seconds). Duration of trailing silence.
     stereo: bool. If true, return a 2d array. If false, return a 1d array.
@@ -227,23 +204,12 @@ def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
     size = int(sr*du)
     if stereo == False: # mono
         noise = A*np.random.uniform(-1, 1, size)
-        if win:
-            win_size = int(sr*win[1])
-            win = signal.get_window(win[0], 2*win_size)
-            win = np.insert(win, win_size, np.ones(size-2*win_size))
-            noise *= win
         if ls:
             noise = np.append(np.zeros(int(sr*ls)), noise)
         if ts:
             noise = np.append(noise, np.zeros(int(sr*ts)))
     else:
-        noise = A*(np.random.uniform(-1, 1, 2*size).reshape((size, 2)))
-        if win:
-            win_size = int(sr*win[1])
-            win = signal.get_window(win[0], 2*win_size)
-            win = np.insert(win, win_size, np.ones(size-2*win_size))
-            win = np.broadcast_to(win.reshape((size, 1)), (size, 2))
-            noise *= win      
+        noise = A*np.random.uniform(-1, 1, (size, 2))    
         if ls:
             noise = np.append(np.zeros((int(sr*ls), 2)), noise, axis=0)
         if ts:
