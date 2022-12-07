@@ -28,7 +28,7 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
 
 class fft_class():
 
-    def __init__(self, sr, _type='m, p', random_phase_type='mono'):
+    def __init__(self, sr=None, _type='m, p', random_phase_type='mono'):
         self.sr, self._type, self.random_phase_type = sr, _type, random_phase_type
 
     def fw(self, au):
@@ -115,7 +115,8 @@ class fft_class():
     def re_compare(self, au, au_re):
         print('reconstruction comparison:')
         print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
-        print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
+        if self.sr:
+            print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
             
 class stft_class():
 
