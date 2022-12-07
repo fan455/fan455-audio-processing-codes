@@ -28,7 +28,7 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
 
 class stft_class():
 
-    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', _type='m, p', random_phase_type='inconsistent'):
+    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', _type='m, p', random_phase_type='mono'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
@@ -37,9 +37,10 @@ class stft_class():
         fft_ratio: float (ratio >= 1). The fft ratio relative to T.
         win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
         _type: str ('m', 'm, p', 'z' or 'z_r, z_i'). Please refer to the illustration of the returns of self.forward().
+        random_phase_type: str. Only useful when _type='m' and audio is stereo. If it's 'mono'('stereo'), stereo reconstruction will use the same (different) random phases for both channels.
         """
         self.sr, self.nperseg, self.noverlap, self.nfft = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio)
-        self.hop = self.nperseg - self.noverlap
+        self.nhop = self.nperseg - self.noverlap
         self.win, self._type = signal.windows.get_window(win, self.nperseg, fftbins=True), _type
         self.random_phase_type = random_phase_type
 
@@ -53,12 +54,12 @@ class stft_class():
         Returns:
         f: 1d array. As scipy.signal.stft returns.
         t: 1d array. As scipy.signal.stft returns.
-        m: if self._type='m'. The magnitudes array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1])
-        m, p: if self._type='m, p'. The magnitudes array and phases array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1])
+        m: if self._type='m'. The magnitudes array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]). PLEASE NOTE that the istft will use phases of a white noise!
+        m, p: if self._type='m, p'. The magnitudes array and phases array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]). The phase range is [-pi, pi].
         z: if self._type='z'. The complex array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         z.real, z.imag: if self._type='z_r, z_i'. The complex array' real array and imaginary array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         """
-        f, t, z = signal.stft(au, fs=self.sr, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, window=self.win, axis=0)
+        f, t, z = signal.stft(au, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
         z = z.swapaxes(1, -1)
         print(f'au.shape = {au.shape}')
         print(f'f.shape = {f.shape}')
@@ -93,40 +94,25 @@ class stft_class():
         if self._type == 'm':
             m = in_tup
             del in_tup
-            shape = m.shape
-            if self.random_phase_type == 'inconsistent':
-                p = np.pi*np.random.uniform(-1, 1, shape[:2]) # this uses random phase.
-            elif self.random_phase_type == 'consistent':
-                p1 = 2*np.pi*np.random.uniform(0, 1, shape[0]).reshape((shape[0], 1))
-                p = p1
-                f = f.reshape((f.size, 1))
-                c1, c2 = (self.hop+1)*f/self.sr, -0.5/np.pi # not sure if self.hop+1 is right...
-                for i in range(1, shape[1]):
-                    p1 = 2*np.pi*np.remainder(c1+c2*p1, 1)
-                    p = np.append(p, p1, axis=1)
-            if len(shape) == 3:
-                p = np.stack([p, p], axis=-1)
-            z = np.empty(shape, dtype=np.complex128)
+            p = self.get_random_phase(m.shape[1], m.ndim)
+            z = np.empty(m.shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
         elif self._type == 'm, p':
             m, p = in_tup
             del in_tup
             p -= 0.5*np.pi
-            shape = m.shape
-            z = np.empty(shape, dtype=np.complex128)
+            z = np.empty(m.shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
-            #z *= np.exp(-0.5*np.pi*1.0j)
         elif self._type == 'z':
             z = in_tup
             del in_tup
         elif self._type == 'z_r, z_i':
-            shape = in_tup[0].shape
-            z = np.empty(shape, dtype=np.complex128)
+            z = np.empty(in_tup[0].shape, dtype=np.complex128)
             z.real, z.imag = in_tup
             del in_tup
         else:
             raise ValueError('Parameter self._type has to be "m", "m, p", "z" or "z_r, z_i".')
-        t, au_re = signal.istft(z, fs=self.sr, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, window=self.win, time_axis=1, freq_axis=0)
+        t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
         print(f'au_re.shape = {au_re.shape}')
         return au_re
 
@@ -151,16 +137,28 @@ class stft_class():
             au_re = self.inverse((z_r, z_i))
         else:
             raise ValueError('Parameter self._type has to be "m", "m, p", "z" or "z_r, z_i".')
-        return au_re
+        return au_re        
 
-    def compensate_ls(self, au_re):
-        # compensate for leading silence.
-        if au_re.ndim == 2:
-            return np.append(np.zeros((self.nperseg, 2)), au_re, axis=0)
-        elif au.ndim == 1:
-            return np.append(np.zeros(self.nperseg), au_re)
+    def get_random_phase(self, nwin, m_ndim):
+        nsample = (self.nhop)*(nwin-1) + (self.nperseg)
+        if m_ndim == 3:
+            if self.random_phase_type == 'mono':
+                noise = 0.5*np.random.uniform(-1, 1, nsample)
+                noise = np.stack((noise, noise), axis=-1)
+            elif self.random_phase_type == 'stereo':
+                noise = 0.5*np.random.uniform(-1, 1, (nsample, 2))
+            else:
+                raise ValueError('self.random_phase_type != "mono" or "stereo"')
+        elif m_ndim == 2:
+            noise = 0.5*np.random.uniform(-1, 1, nsample)
         else:
-            raise ValueError('au.ndim != 1 or 2')        
+            raise ValueError('m_ndim != 2 or 3')
+        f_noise, t_noise, z_noise = signal.stft(noise, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, boundary=None, axis=0)
+        z_noise = z_noise.swapaxes(1, -1)
+        p_noise = np.angle(z_noise*np.exp(0.5*np.pi*1.0j))
+        print(f'nwin = {nwin}, nsample={nsample}')
+        print(f'p_noise.shape = {p_noise.shape}')
+        return p_noise
 
     def re_compare(self, au, au_re):
         print('reconstruction comparison:')
