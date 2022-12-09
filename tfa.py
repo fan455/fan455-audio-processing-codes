@@ -94,7 +94,7 @@ class fft_class():
             
 class stft_class():
 
-    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', random_phase_type='mono'):
+    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
@@ -102,8 +102,7 @@ class stft_class():
         overlap: float (ratio between 0 and 1). Overlap ratio between each two adjacent windows.
         fft_ratio: float (ratio >= 1). The fft ratio relative to T.
         win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
-        _type: str ('m', 'm, p', 'z' or 'z.real, z.imag'). Please refer to the illustration of the returns of self.forward().
-        random_phase_type: str. Only useful when _type='m' and audio is stereo. If it's 'mono'('stereo'), stereo reconstruction will use the same (different) random phases for both channels.
+        fft_type: str ('m', 'm, p', 'z' or 'z.real, z.imag'). Please refer to the illustration of the returns of self.forward().
         """
         self.sr, self.nperseg, self.noverlap, self.nfft = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio)
         self.nhop = self.nperseg - self.noverlap
