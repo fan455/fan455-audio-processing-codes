@@ -75,7 +75,7 @@ class fft_class():
             m, p = self.fw(au)
             au_re = self.bw((m, p))
         elif self.fft_type == 'z':
-            z = self.fw(au)
+            z, = self.fw(au)
             au_re = self.bw(z)
         elif self.fft_type == 'z.real, z.imag':
             z_r, z_i = self.fw(au)
@@ -88,13 +88,16 @@ class fft_class():
 
     def re_compare(self, au, au_re):
         print('reconstruction comparison:')
-        print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
         if self.sr:
             print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
+        if au.ndim == 2:
+            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
+        elif au.ndim == 1:
+            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
             
 class stft_class():
 
-    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p'):
+    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
@@ -102,11 +105,14 @@ class stft_class():
         overlap: float (ratio between 0 and 1). Overlap ratio between each two adjacent windows.
         fft_ratio: float (ratio >= 1). The fft ratio relative to T.
         win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
-        fft_type: str ('m', 'm, p', 'z' or 'z.real, z.imag'). Please refer to the illustration of the returns of self.forward().
+        fft_type: str ('m', 'm, p', 'z' or 'z.real, z.imag'). Please refer to the illustration of the returns of self.forward(). If fft_type=='m', istft will use the Griffin-Lim algorithm (GLA).
+        GLA_n_iter: int. The iteration times for GLA.
+        GLA_random_phase_type: str ('mono' or 'stereo'). Whether the starting random phases for GLA are different between 2 stereo channels.
         """
         self.sr, self.nperseg, self.noverlap, self.nfft = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio)
         self.nhop = self.nperseg - self.noverlap
         self.win, self.fft_type = signal.windows.get_window(win, self.nperseg, fftbins=True), fft_type
+        self.GLA_n_iter, self.GLA_random_phase_type = GLA_n_iter, GLA_random_phase_type
 
     def fw(self, au):
         """
@@ -145,7 +151,7 @@ class stft_class():
         else:
             raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
 
-    def bw(self, in_tup):
+    def bw(self, in_tup, nsample=None):
         """
         Inverse Short-Time Fourier Transform
 
@@ -160,7 +166,20 @@ class stft_class():
             del in_tup
             p -= 0.5*np.pi
             z = np.empty(m.shape, dtype=np.complex128)
-            z.real, z.imag = m*np.cos(p), m*np.sin(p)           
+            z.real, z.imag = m*np.cos(p), m*np.sin(p)
+        elif self.fft_type == 'm':
+            m = in_tup
+            del in_tup
+            p = self.get_random_phase(nsample, m.ndim)
+            z = np.empty(m.shape, dtype=np.complex128)
+            z.real, z.imag = m*np.cos(p), m*np.sin(p)
+            for i in range(0, self.GLA_n_iter):
+                t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
+                f, t, z = signal.stft(au_re, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+                z = z.swapaxes(1, -1)
+                p = np.angle(z)
+                #p = np.angle(z*np.exp(0.5*np.pi*1.0j))
+                z.real, z.imag = m*np.cos(p), m*np.sin(p)   
         elif self.fft_type == 'z':
             z = in_tup
             del in_tup
@@ -168,8 +187,6 @@ class stft_class():
             z = np.empty(in_tup[0].shape, dtype=np.complex128)
             z.real, z.imag = in_tup
             del in_tup
-        elif self.fft_type == 'm':
-            raise ValueError('fft_type="m" is not supported for istft because phase is unknown.')
         else:
             raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
         t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
@@ -186,22 +203,48 @@ class stft_class():
         if self.fft_type == 'm, p':
             f, t, m, p = self.fw(au)
             au_re = self.bw((m, p))
+        elif self.fft_type == 'm':
+            # Using the Griffin-Lim algorithm.
+            f, t, m = self.fw(au)
+            nsample = au.shape[0]
+            print(f'nsample = {nsample}')
+            au_re = self.bw(m, nsample)
         elif self.fft_type == 'z':
             f, t, z = self.fw(au)
             au_re = self.bw(z)
         elif self.fft_type == 'z.real, z.imag':
             f, t, z_r, z_i = self.fw(au)
             au_re = self.bw((z_r, z_i))
-        elif self.fft_type == 'm':
-            raise ValueError('fft_type="m" is not supported for istft because phase is unknown.')
         else:
             raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
         return au_re        
 
     def re_compare(self, au, au_re):
-        print('reconstruction comparison:')
-        print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
+        print('reconstruction comparison:')   
         print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
+        if au.ndim == 2:
+            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
+        elif au.ndim == 1:
+            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
+
+    def get_random_phase(self, nsample, m_ndim):
+        if m_ndim == 3:
+            if self.GLA_random_phase_type == 'mono':
+                noise = 0.5*np.random.uniform(-1, 1, nsample)
+                noise = np.stack((noise, noise), axis=-1)
+            elif self.GLA_random_phase_type == 'stereo':
+                noise = 0.5*np.random.uniform(-1, 1, (nsample, 2))
+            else:
+                raise ValueError('self.GLA_random_phase_type != "mono" or "stereo"')
+        elif m_ndim == 2:
+            noise = 0.5*np.random.uniform(-1, 1, nsample)
+        else:
+            raise ValueError('m_ndim != 2 or 3')
+        f_noise, t_noise, z_noise = signal.stft(noise, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+        z_noise = z_noise.swapaxes(1, -1)
+        p_noise = np.angle(z_noise*np.exp(0.5*np.pi*1.0j))
+        print(f'p_noise.shape = {p_noise.shape}')
+        return p_noise    
 
 def get_sinewave(sr, du, f, phase=0, A=0.5, stereo=False, ls=None, ts=None):
     """
@@ -276,7 +319,7 @@ def time2sample(t, sr):
     # start from 0
     return (sr*t).astype(np.int64)
 
-def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, cent_step=1):
+def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
     Detect the pitch of audio (specifically piano single note) given a pitch, cent band and cent step, using discrete time fourier transform in limited frequency range.
     The computation will be quite slow since it does not use FFT, but it's much more accurate than scipy.signal.stft in terms of frequency resolution. 
@@ -294,7 +337,7 @@ def get_pitch_given(au, sr, channel=0, du=None, given_freq=440, given_cent=100, 
     if au.ndim == 1:
         pass
     elif au.ndim == 2:
-        au = au[:, channel]
+        au = np.average(au, axis=-1)
     else:
         raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
     if du == None:
