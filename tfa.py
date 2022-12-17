@@ -97,11 +97,11 @@ class fft_class():
             
 class stft_class():
 
-    def __init__(self, sr, T=0.1, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
+    def __init__(self, sr, T=0.01067, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
-        T: float (seconds). Time length of a each window. 
+        T: float (seconds). Time length of a each window. For 48000kHz, T=0.01067 means n=512.
         overlap: float (ratio between 0 and 1). Overlap ratio between each two adjacent windows.
         fft_ratio: float (ratio >= 1). The fft ratio relative to T.
         win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
@@ -178,7 +178,6 @@ class stft_class():
                 f, t, z = signal.stft(au_re, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
                 z = z.swapaxes(1, -1)
                 p = np.angle(z)
-                #p = np.angle(z*np.exp(0.5*np.pi*1.0j))
                 z.real, z.imag = m*np.cos(p), m*np.sin(p)   
         elif self.fft_type == 'z':
             z = in_tup
