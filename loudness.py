@@ -24,7 +24,7 @@ def check_clipping(au):
     if np.amax(np.abs(au)) >= 1:
         raise ValueError('Clipping has occurred.')
 
-class Mlufs_meter():
+class mLUFS_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
     def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0):
         """
@@ -131,7 +131,7 @@ class Mlufs_meter():
         # Normalize the maxinum momentary lufs.
         return au*db2amp(target - self.get_max(au, cut_start=cut_start))
     
-class Ilufs_meter():
+class iLUFS_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
     def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0):
         """
