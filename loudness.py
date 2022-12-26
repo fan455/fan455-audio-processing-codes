@@ -20,6 +20,9 @@ def amp2db(amp: float): # zero or positive amp value range between 0 and 1.
 def db2amp(db: float): # zero or negative db value.
     return np.power(10, db/20)
 
+def change_vol(au, db_change):
+    return au*db2amp(db_change)
+
 def check_clipping(au):
     if np.amax(np.abs(au)) >= 1:
         raise ValueError('Clipping has occurred.')
