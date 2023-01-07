@@ -26,64 +26,26 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
     sr_stretch = int(np.rint(sr_new/ratio))
     return resampy.resample(au, sr, sr_stretch, axis=0)
 
-class fft_class():
+class dct_class():
 
-    def __init__(self, sr=None, fft_type='m, p'):
-        self.sr, self.fft_type = sr, fft_type
+    def __init__(self, sr=None, dct_type=2):
+        self.sr, self.dct_type = sr, dct_type
 
     def fw(self, au):
-        z = fft.rfft(au, axis=0, norm='forward')
         print(f'au.shape = {au.shape}')
-        print(f'z.shape = {z.shape}')
-        if self.fft_type == 'm, p':
-            m, p = np.abs(z), np.angle(z*np.exp(0.5*np.pi*1.0j))
-            return m, p
-        elif self.fft_type == 'm':
-            m = np.abs(z)
-            return m
-        elif self.fft_type == 'z':
-            return z
-        elif self.fft_type == 'z.real, z.imag':
-            return z.real, z.imag
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
+        au_dct = fft.dct(au, self.dct_type, axis=0, norm='forward')
+        print(f'au_dct.shape = {au_dct.shape}')
+        print(f'au_dct.dtype = {au_dct.dtype}')
+        return au_dct
 
-    def bw(self, in_tup):
-        if self.fft_type == 'm, p':
-            m, p = in_tup
-            del in_tup
-            p -= 0.5*np.pi
-            z = np.empty(m.shape, dtype=np.complex128)
-            z.real, z.imag = m*np.cos(p), m*np.sin(p)
-        elif self.fft_type == 'z':
-            z = in_tup
-            del in_tup
-        elif self.fft_type == 'z.real, z.imag':
-            z = np.empty(in_tup[0].shape, dtype=np.complex128)
-            z.real, z.imag = in_tup
-            del in_tup
-        elif self.fft_type == 'm':
-            raise ValueError('fft_type="m" is not supported for ifft because phase is unknown.')
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
-        au_re = fft.irfft(z, axis=0, norm='forward')
+    def bw(self, au_dct):
+        au_re = fft.idct(au_dct, self.dct_type, axis=0, norm='forward')
         print(f'au_re.shape = {au_re.shape}')
         return au_re
 
     def re(self, au):          
-        if self.fft_type == 'm, p':
-            m, p = self.fw(au)
-            au_re = self.bw((m, p))
-        elif self.fft_type == 'z':
-            z, = self.fw(au)
-            au_re = self.bw(z)
-        elif self.fft_type == 'z.real, z.imag':
-            z_r, z_i = self.fw(au)
-            au_re = self.bw((z_r, z_i))
-        elif self.fft_type == 'm':
-            raise ValueError('fft_type="m" is not supported for ifft because phase is unknown.')
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
+        au_dct = self.fw(au)
+        au_re = self.bw(au_dct)
         return au_re 
 
     def re_compare(self, au, au_re):
@@ -94,10 +56,10 @@ class fft_class():
             print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
         elif au.ndim == 1:
             print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
-            
+    
 class stft_class():
 
-    def __init__(self, sr, T=0.01067, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
+    def __init__(self, sr, T=0.025, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
         """
         Parameters:
         sr: int (Hz). Sample rate, ususally 44100 or 48000.
@@ -245,6 +207,75 @@ class stft_class():
         print(f'p_noise.shape = {p_noise.shape}')
         return p_noise    
 
+class fft_class():
+
+    def __init__(self, sr=None, fft_type='m, p'):
+        self.sr, self.fft_type = sr, fft_type
+
+    def fw(self, au):
+        z = fft.rfft(au, axis=0, norm='forward')
+        print(f'au.shape = {au.shape}')
+        print(f'z.shape = {z.shape}')
+        if self.fft_type == 'm, p':
+            m, p = np.abs(z), np.angle(z*np.exp(0.5*np.pi*1.0j))
+            return m, p
+        elif self.fft_type == 'm':
+            m = np.abs(z)
+            return m
+        elif self.fft_type == 'z':
+            return z
+        elif self.fft_type == 'z.real, z.imag':
+            return z.real, z.imag
+        else:
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
+
+    def bw(self, in_tup):
+        if self.fft_type == 'm, p':
+            m, p = in_tup
+            del in_tup
+            p -= 0.5*np.pi
+            z = np.empty(m.shape, dtype=np.complex128)
+            z.real, z.imag = m*np.cos(p), m*np.sin(p)
+        elif self.fft_type == 'z':
+            z = in_tup
+            del in_tup
+        elif self.fft_type == 'z.real, z.imag':
+            z = np.empty(in_tup[0].shape, dtype=np.complex128)
+            z.real, z.imag = in_tup
+            del in_tup
+        elif self.fft_type == 'm':
+            raise ValueError('fft_type="m" is not supported for ifft because phase is unknown.')
+        else:
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
+        au_re = fft.irfft(z, axis=0, norm='forward')
+        print(f'au_re.shape = {au_re.shape}')
+        return au_re
+
+    def re(self, au):          
+        if self.fft_type == 'm, p':
+            m, p = self.fw(au)
+            au_re = self.bw((m, p))
+        elif self.fft_type == 'z':
+            z, = self.fw(au)
+            au_re = self.bw(z)
+        elif self.fft_type == 'z.real, z.imag':
+            z_r, z_i = self.fw(au)
+            au_re = self.bw((z_r, z_i))
+        elif self.fft_type == 'm':
+            raise ValueError('fft_type="m" is not supported for ifft because phase is unknown.')
+        else:
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
+        return au_re 
+
+    def re_compare(self, au, au_re):
+        print('reconstruction comparison:')
+        if self.sr:
+            print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
+        if au.ndim == 2:
+            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
+        elif au.ndim == 1:
+            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
+ 
 def get_sinewave(sr, du, f, phase=0, A=0.5, stereo=False, ls=None, ts=None):
     """
     Generate a pure sine wave for testing.
