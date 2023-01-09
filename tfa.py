@@ -356,9 +356,8 @@ def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1
     I've ensured the cpu and memory pressure won't be high by using for-loop.
     
     Parameters:
-    au: ndarray (float between -1 and 1). The input audio.
+    au: ndarray (float between -1 and 1). The input audio. If audio is stereo, it will be summed to mono.
     sr: int. Sample rate of audio.
-    channel: int. The index of the audio channel to analyze. Only supports 1-channel analysis. None (using all channels) is not supported.
     du: None or float (seconds). The duration of audio to be analyzed. If set to None, it will be the maxinum integar seconds available.
     given_freq: float (Hz).
     given_cent: positive float (cent). Half of the cent band around the given frequency for pitch detection.
