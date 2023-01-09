@@ -266,20 +266,20 @@ def get_peak_LR(au):
     peak_LR = np.amax(np.abs(au), axis=0)
     return peak_LR[0], peak_LR[1]
 
-def norm_mid_peak(au, amp=0.35):
+def norm_mid_peak(au, db=-10.0):
     """
     normalize the peak amplitude of the mid channel of a stereo wav file under the normal -3db pan law.
     input array, output array, no read or write audio files.
     """
-    au *= amp/np.amax(np.abs(np.average(au, axis=-1)))
+    au *= db2amp(db)/np.amax(np.abs(np.average(au, axis=-1)))
     return au
 
-def norm_mono_peak(au, amp=0.5):
+def norm_peak(au, db=-10.0):
     """
-    normalize the peak amplitude of a mono audio.
+    normalize the peak amplitude of a mono or stereo audio.
     input array, output array, no read or write audio files.
     """
-    au *= amp/np.amax(np.abs(au))
+    au *= db2amp(db)/np.amax(np.abs(au))
     return au
 
 def change_LR_peak_ratio(au, scale):
