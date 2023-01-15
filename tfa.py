@@ -130,7 +130,7 @@ class stft_class():
             z = np.empty(m.shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
         elif self.fft_type == 'm':
-            m = in_tup
+            m = in_tup.copy()
             del in_tup
             p = self.get_random_phase(nsample, m.ndim)
             z = np.empty(m.shape, dtype=np.complex128)
@@ -142,7 +142,7 @@ class stft_class():
                 p = np.angle(z)
                 z.real, z.imag = m*np.cos(p), m*np.sin(p)   
         elif self.fft_type == 'z':
-            z = in_tup
+            z = in_tup.copy()
             del in_tup
         elif self.fft_type == 'z.real, z.imag':
             z = np.empty(in_tup[0].shape, dtype=np.complex128)
@@ -237,7 +237,7 @@ class fft_class():
             z = np.empty(m.shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
         elif self.fft_type == 'z':
-            z = in_tup
+            z = in_tup.copy()
             del in_tup
         elif self.fft_type == 'z.real, z.imag':
             z = np.empty(in_tup[0].shape, dtype=np.complex128)
@@ -356,8 +356,9 @@ def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1
     I've ensured the cpu and memory pressure won't be high by using for-loop.
     
     Parameters:
-    au: ndarray (float between -1 and 1). The input audio. If audio is stereo, it will be summed to mono.
+    au: ndarray (float between -1 and 1). The input audio.
     sr: int. Sample rate of audio.
+    channel: int. The index of the audio channel to analyze. Only supports 1-channel analysis. None (using all channels) is not supported.
     du: None or float (seconds). The duration of audio to be analyzed. If set to None, it will be the maxinum integar seconds available.
     given_freq: float (Hz).
     given_cent: positive float (cent). Half of the cent band around the given frequency for pitch detection.
