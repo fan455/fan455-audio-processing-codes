@@ -26,6 +26,12 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
     sr_stretch = int(np.rint(sr_new/ratio))
     return resampy.resample(au, sr, sr_stretch, axis=0)
 
+def fft(y, axis=0):
+    return fft.rfft(y, axis=axis, norm='forward')
+
+def ifft(z, axis=0):
+    return fft.irfft(z, axis=axis, norm='forward')
+
 class dct_class():
 
     def __init__(self, sr=None, dct_type=2):
