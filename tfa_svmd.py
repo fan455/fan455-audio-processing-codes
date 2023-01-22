@@ -25,7 +25,7 @@ import timeit
 import numpy as np
 from scipy import fft
 
-def svmd(y, out_thr=1e-1, in_thr=1e-6, out_itr_max=10, in_itr_max=20, alpha=1.0, beta=5e-1):
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_itr_max=20, in_itr_max=50, alpha=5e+1, beta=1e-1):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
