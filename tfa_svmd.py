@@ -25,14 +25,14 @@ import timeit
 import numpy as np
 from scipy import fft
 
-def svmd(y, out_thr=1e-5, in_thr=1e-10, out_itr_max=20, in_itr_max=50, alpha=5e+1, beta=1e-1):
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=5e+1, beta=1e-1):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
     out_thr: positive float. The threshold for outer iterations. A smaller value may result in more modes decomposed.
     in_thr: positive float. The threshold for inner iterations. A smaller value may result in more accurate modes decomposed.
-    out_itr_max: positive int. Maxinum outer iteration times. It can avoid endless iteration case.
-    in_itr_max: positive int. Maxinum inner iteration times. It can avoid endless iteration case.
+    out_iter_max: positive int. Maxinum outer iteration times. It can avoid endless iteration case.
+    in_iter_max: positive int. Maxinum inner iteration times. It can avoid endless iteration case.
     alpha: positive float. Penalty coffecient for the second quadratic term in the optimization.
     beta: positive float. Penalty coffecient for the third quadratic term in the optimization.
 
@@ -61,19 +61,18 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_itr_max=20, in_itr_max=50, alpha=5e+
     z = 2*fft.rfft(y, axis=0, norm='forward') # transform input to frequency domain. z represents complex.
     print(f'z.size = {z.size}')
     z_idx = np.arange(z.size)
-    z_res = z.copy()
     z_Mode = []
     
-    for k in range(1, out_itr_max+1):
-        mode_prev = np.amax(np.abs(z_res))
+    for k in range(1, out_iter_max+1):
+        mode_prev = np.amax(np.abs(z))
         
-        for i in range(1, in_itr_max+1):
+        for i in range(1, in_iter_max+1):
             mode_prev_square = np.square(np.abs(mode_prev))
             fcenter = np.sum(z_idx*mode_prev_square)/np.sum(mode_prev_square)
-            z_res_prev = z_res - mode_prev
-            z_res_prev_square = np.square(np.abs(z_res_prev))
-            fcenter_res = np.sum(z_idx*z_res_prev_square)/np.sum(z_res_prev_square)
-            mode_next = (z_res*(1 + beta*np.square(z_idx-fcenter_res)))/ \
+            z_prev = z - mode_prev
+            z_prev_square = np.square(np.abs(z_prev))
+            fcenter_res = np.sum(z_idx*z_prev_square)/np.sum(z_prev_square)
+            mode_next = (z*(1 + beta*np.square(z_idx-fcenter_res)))/ \
                         (1+alpha*np.square(z_idx-fcenter) + beta*np.square(z_idx-fcenter_res))
             if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
                 mode_prev = mode_next.copy()
@@ -82,14 +81,14 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_itr_max=20, in_itr_max=50, alpha=5e+
 
         print(f'The {k}th outer iteration took {i} inner iterations.')
         z_Mode.append(mode_next)
-        z_res -= mode_next
-        if np.sum(np.square(np.abs(z_res))) > out_thr:
+        z -= mode_next
+        if np.sum(np.square(np.abs(z))) > out_thr:
             pass
         else:
             break
         
     print(f'Totally {k+1} modes decomposed.')
-    z_Mode.append(z_res)
+    z_Mode.append(z)
     z_Mode = np.array(z_Mode)
     z_Mode = np.append(z_Mode, np.zeros((k+1, y_size//2)), axis=1)
     y_Mode = np.real(fft.ifft(z_Mode, axis=1, norm='forward')) # transform output back to time domain.
