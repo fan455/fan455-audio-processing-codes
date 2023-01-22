@@ -25,7 +25,12 @@ import timeit
 import numpy as np
 import scipy.fft
 
-def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=5e+1, beta=1e-1):
+def abs2(x):
+    # Avoid square root calculation.
+    #return np.square(x.real) + np.square(x.imag)
+    return x.real**2 + x.imag**2 # This seems faster than the above line.
+
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2.5e+1, beta=1e-1):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
@@ -64,17 +69,19 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=5
     z_Mode = []
     
     for k in range(1, out_iter_max+1):
-        mode_prev = np.amax(np.abs(z))
+        #mode_prev = np.amax(np.abs(z))
+        mode_prev = z[np.argmax(np.abs(z))] # I'm not sure if this line or the above line is correct.
         
         for i in range(1, in_iter_max+1):
-            mode_prev_square = np.square(np.abs(mode_prev))
+            mode_prev_square = abs2(mode_prev)
             fcenter = np.sum(z_idx*mode_prev_square)/np.sum(mode_prev_square)
             z_prev = z - mode_prev
-            z_prev_square = np.square(np.abs(z_prev))
+            z_prev_square = abs2(z_prev)
             fcenter_res = np.sum(z_idx*z_prev_square)/np.sum(z_prev_square)
             mode_next = (z*(1 + beta*np.square(z_idx-fcenter_res)))/ \
                         (1+alpha*np.square(z_idx-fcenter) + beta*np.square(z_idx-fcenter_res))
-            if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
+            #if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
+            if np.sum(abs2(mode_next-mode_prev)) > in_thr: # I'm not sure if this line or the above line is correct.
                 mode_prev = mode_next.copy()
             else:
                 break
@@ -82,7 +89,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=5
         print(f'The {k}th outer iteration took {i} inner iterations.')
         z_Mode.append(mode_next)
         z -= mode_next
-        if np.sum(np.square(np.abs(z))) > out_thr:
+        if np.sum(abs2(z)) > out_thr:
             pass
         else:
             break
