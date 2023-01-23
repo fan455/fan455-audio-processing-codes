@@ -54,12 +54,12 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     assert y.ndim == 1, 'y.ndim = {y.ndim}'
     y_size = y.size
     print(f'y.size = {y_size}')
-    if y_size % 2 != 0: # if ihe input size is odd,
+    if y_size % 2 != 0:
         input_size_is_odd = True # no adjustment.
-    else: # if ihe input size is even,
+    else:
+        input_size_is_odd = False
         y = np.append(y, 0.0)
-        # then make it odd because even fft size will result in a frequency that is both positive and negative.
-        input_size_is_odd = False # remember to use later when compensating for this adjustment.
+        # make input size odd because even fft size will result in a frequency that is both positive and negative.
         print('The input is padded 1 zero at the end because its size is even.')
     print(f'input_size_is_odd = {input_size_is_odd}')
     print()
@@ -98,7 +98,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     z_modes.append(z)
     z_modes = np.append(np.array(z_modes), np.zeros((k+1, y_size//2)), axis=1)
     y_modes = np.real(scipy.fft.ifft(z_modes, axis=1, norm='backward')) # transform output back to time domain.
-    if not input_size_is_odd: # if input size is even,
+    if not input_size_is_odd:
         y_modes = np.delete(y_modes, -1, axis=1) # delete the last element of output to compensate.
     print('The last element of output is deleted because input size is even.')
     assert y_modes.shape[1] == y_size, f'y_modes.shape[1] = {y_modes.shape[1]}'
@@ -113,7 +113,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     else:
         raise ValueError(f'return_type "{return_type}" is not supported.')
 
-def svmd_refine():
+def svmd_refined():
     print('Refined SVMD started.')
     start_time = timeit.default_timer()
 
