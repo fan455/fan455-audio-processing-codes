@@ -63,7 +63,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     print()
 
     print('Decomposition information:')
-    z = 2*scipy.fft.rfft(y, axis=0, norm='forward') # transform input to frequency domain. z represents complex.
+    z = 2*scipy.fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
     print(f'z.size = {z.size}')
     z_idx = np.arange(z.size)
     z_Mode = []
@@ -96,7 +96,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     z_Mode.append(z)
     z_Mode = np.array(z_Mode)
     z_Mode = np.append(z_Mode, np.zeros((k+1, y_size//2)), axis=1)
-    y_Mode = np.real(scipy.fft.ifft(z_Mode, axis=1, norm='forward')) # transform output back to time domain.
+    y_Mode = np.real(scipy.fft.ifft(z_Mode, axis=1, norm='backward')) # transform output back to time domain.
     if not input_size_is_odd: # if input size is even,
         y_Mode = np.delete(y_Mode, -1, axis=1) # delete the last element of output to compensate.
     print('The last element of output is deleted because input size is even.')
