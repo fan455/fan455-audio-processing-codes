@@ -3,7 +3,6 @@ plot
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 def plot(x, y, title='title', x_label='x', y_label='y', mycolor='#D1DDC5'):
     """
@@ -47,11 +46,11 @@ def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, title='Deco
     ax[0].plot(x, au, color='green')
     
     for i in range(1, N):
-        ax[i].set_title(f'mode {i+1}')     
+        ax[i].set_title(f'mode {i}')     
         ax[i].set_facecolor(mycolor)
         ax[i].plot(x, Modes[i-1, :]) 
 
-    ax[N].set_title('residual part')
+    ax[N].set_title('residual')
     ax[N].set_facecolor(mycolor)
     ax[N].plot(x, Modes[N-1, :])
     
@@ -61,6 +60,7 @@ def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, title='Deco
     plt.show()    
 
 def plot_pdf(x, title='probability density function', x_label='x', y_label='density', mycolor='#D1DDC5'):
+    import seaborn as sns
     """
     Plot the probability density function of x.
     x: 1d array.
