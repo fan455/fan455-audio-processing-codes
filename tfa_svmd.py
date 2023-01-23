@@ -30,7 +30,7 @@ def abs2(x):
     #return np.square(x.real) + np.square(x.imag)
     return x.real**2 + x.imag**2 # This line seems faster than the above line.
 
-def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2.5e+1, beta=1e-1):
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2.5e+1, beta=1e-1, return_type='modes'):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
@@ -40,10 +40,12 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     in_iter_max: positive int. Maxinum inner iteration times. It can avoid endless iteration case.
     alpha: positive float. Penalty coffecient for the second quadratic term in the optimization.
     beta: positive float. Penalty coffecient for the third quadratic term in the optimization.
+    return_type: str, 'modes' or 'modes, residual'. If 'modes', return y_modes array including residual at index [-1, :].
+        If 'residual', return tuple (y_modes, y_res).
 
-    Returns:
-    y_Mode: nd real array. The decomposed modes of y of shape (number of modes, size of y).
-        The last mode is the residue of input after subtracting previous modes.
+    Returns (depending on return_type):
+    y_modes: nd real array. The decomposed modes of y of shape (number of modes, size of y), excluding or including residual.
+    y_res: The residue of input after subtracting previous modes.
     """
     print('SVMD started.')
     print()
@@ -66,7 +68,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     z = 2*scipy.fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
     print(f'z.size = {z.size}')
     z_idx = np.arange(z.size)
-    z_Mode = []
+    z_modes = []
     
     for k in range(1, out_iter_max+1):
         #mode_prev = np.amax(np.abs(z))
@@ -87,21 +89,37 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
                 break
 
         print(f'The {k}th outer iteration took {i} inner iterations.')
-        z_Mode.append(mode_next)
+        z_modes.append(mode_next)
         z -= mode_next
         if np.sum(abs2(z)) <= out_thr:
             break
         
     print(f'Totally {k+1} modes decomposed.')
-    z_Mode.append(z)
-    z_Mode = np.array(z_Mode)
-    z_Mode = np.append(z_Mode, np.zeros((k+1, y_size//2)), axis=1)
-    y_Mode = np.real(scipy.fft.ifft(z_Mode, axis=1, norm='backward')) # transform output back to time domain.
+    z_modes.append(z)
+    z_modes = np.append(np.array(z_modes), np.zeros((k+1, y_size//2)), axis=1)
+    y_modes = np.real(scipy.fft.ifft(z_modes, axis=1, norm='backward')) # transform output back to time domain.
     if not input_size_is_odd: # if input size is even,
-        y_Mode = np.delete(y_Mode, -1, axis=1) # delete the last element of output to compensate.
+        y_modes = np.delete(y_modes, -1, axis=1) # delete the last element of output to compensate.
     print('The last element of output is deleted because input size is even.')
-    assert y_Mode.shape[1] == y_size, f'y_Mode.shape[1] = {y_Mode.shape[1]}'
+    assert y_modes.shape[1] == y_size, f'y_modes.shape[1] = {y_modes.shape[1]}'
     print()
     end_time = timeit.default_timer()
     print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.')
-    return y_Mode
+    print()
+    if return_type == 'modes':
+        return y_modes
+    elif return_type == 'modes, residual':
+        return y_modes[:-1, :], y_modes[-1, :]
+    else:
+        raise ValueError(f'return_type "{return_type}" is not supported.')
+
+def svmd_refine():
+    print('Refined SVMD started.')
+    start_time = timeit.default_timer()
+
+
+    
+    end_time = timeit.default_timer()
+    print(f'Refined SVMD completed, running time: {round((end_time-start_time), 4)} seconds.')
+
+    
