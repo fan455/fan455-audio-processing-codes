@@ -1,5 +1,5 @@
 # Sequential Variational Mode Decomposition (SVMD)
-# This algorithm is developed by Wei Chen from JiangXi University of Finances and Economics.
+# This algorithm is developed by Wei Chen from JiangXi University of Finance and Economics.
 # Reference paper:
 """
 @ARTICLE{2021arXiv210305874C,
@@ -28,7 +28,7 @@ import scipy.fft
 def abs2(x):
     # Avoid square root calculation.
     #return np.square(x.real) + np.square(x.imag)
-    return x.real**2 + x.imag**2 # This seems faster than the above line.
+    return x.real**2 + x.imag**2 # This line seems faster than the above line.
 
 def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2.5e+1, beta=1e-1):
     """
@@ -73,11 +73,11 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
         mode_prev = z[np.argmax(np.abs(z))] # I'm not sure if this line or the above line is correct.
         
         for i in range(1, in_iter_max+1):
-            mode_prev_square = abs2(mode_prev)
-            fcenter = np.sum(z_idx*mode_prev_square)/np.sum(mode_prev_square)
+            mode_prev_sq = abs2(mode_prev)
+            fcenter = np.sum(z_idx*mode_prev_sq)/np.sum(mode_prev_sq)
             z_prev = z - mode_prev
-            z_prev_square = abs2(z_prev)
-            fcenter_res = np.sum(z_idx*z_prev_square)/np.sum(z_prev_square)
+            z_prev_sq = abs2(z_prev)
+            fcenter_res = np.sum(z_idx*z_prev_sq)/np.sum(z_prev_sq)
             mode_next = (z*(1 + beta*np.square(z_idx-fcenter_res)))/ \
                         (1+alpha*np.square(z_idx-fcenter) + beta*np.square(z_idx-fcenter_res))
             #if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
@@ -89,9 +89,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
         print(f'The {k}th outer iteration took {i} inner iterations.')
         z_Mode.append(mode_next)
         z -= mode_next
-        if np.sum(abs2(z)) > out_thr:
-            pass
-        else:
+        if not np.sum(abs2(z)) > out_thr:
             break
         
     print(f'Totally {k+1} modes decomposed.')
@@ -107,4 +105,3 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     end_time = timeit.default_timer()
     print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.')
     return y_Mode
-        
