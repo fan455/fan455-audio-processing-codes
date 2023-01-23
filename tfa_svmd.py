@@ -89,7 +89,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
         print(f'The {k}th outer iteration took {i} inner iterations.')
         z_Mode.append(mode_next)
         z -= mode_next
-        if not np.sum(abs2(z)) > out_thr:
+        if np.sum(abs2(z)) <= out_thr:
             break
         
     print(f'Totally {k+1} modes decomposed.')
