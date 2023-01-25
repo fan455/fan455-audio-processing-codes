@@ -30,7 +30,7 @@ def abs2(x):
     #return np.square(x.real) + np.square(x.imag)
     return x.real**2 + x.imag**2 # This line seems faster than the above line.
 
-def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2.5e+1, beta=1e-1, return_type='modes'):
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1e+1, beta=1e-1, return_type='modes'):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
@@ -71,17 +71,19 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     z_modes = []
     
     for k in range(1, out_iter_max+1):
-        #mode_prev = np.amax(np.abs(z))
-        mode_prev = z[np.argmax(np.abs(z))] # I'm not sure if this line or the above line is correct.
+        f0 = np.argmax(np.abs(z))
+        mode_prev = np.zeros(z.size, dtype=complex)
+        #mode_prev[f0] = abs(z[f0])
+        mode_prev[f0] = z[f0] # I'm not sure if this line or the above line is correct.
         
         for i in range(1, in_iter_max+1):
             mode_prev_sq = abs2(mode_prev)
-            fcenter = np.sum(z_idx*mode_prev_sq)/np.sum(mode_prev_sq)
+            fc = np.sum(z_idx*mode_prev_sq)/np.sum(mode_prev_sq)
             z_prev = z - mode_prev
             z_prev_sq = abs2(z_prev)
-            fcenter_res = np.sum(z_idx*z_prev_sq)/np.sum(z_prev_sq)
-            mode_next = (z*(1 + beta*np.square(z_idx-fcenter_res)))/ \
-                        (1+alpha*np.square(z_idx-fcenter) + beta*np.square(z_idx-fcenter_res))
+            fc_res = np.sum(z_idx*z_prev_sq)/np.sum(z_prev_sq)
+            mode_next = (z*(1 + beta*np.square(z_idx-fc_res)))/ \
+                        (1+alpha*np.square(z_idx-fc) + beta*np.square(z_idx-fc_res))
             #if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
             if np.sum(abs2(mode_next-mode_prev)) > in_thr: # I'm not sure if this line or the above line is correct.
                 mode_prev = mode_next.copy()
@@ -113,7 +115,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=2
     else:
         raise ValueError(f'return_type "{return_type}" is not supported.')
 
-def svmd_refined():
+def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1e+1, beta=1e-1):
     print('Refined SVMD started.')
     start_time = timeit.default_timer()
 
