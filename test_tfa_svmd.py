@@ -1,7 +1,7 @@
 import numpy as np
 from plot import *
 from tfa_svmd import *
-from tfa import rfft_class
+from tfa import get_rfftm
 
 # Define signal
 sr, du, du_extend = 5000, 1.0, 0.1
@@ -14,12 +14,11 @@ t -= du_extend
 #np.save('signal 1.npy', y)
 
 # Decompose
-class1 = rfft_class(fft_type='m')
-y_rfft = class1.fw(y)
+y_rfft = get_rfftm(y)
 plot(y_rfft, title='spectrum of the original signal', x_label='frequency', y_label='magnitude')
 
 Modes, res = svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=3, in_iter_max=50, alpha=1, beta=1e-2, return_type='modes, residual')
-res_rfft = class1.fw(res)
+res_rfft = get_rfftm(res)
 plot(res_rfft, title='spectrum of the residual', x_label='frequency', y_label='magnitude')
 
 if Modes.shape[0] <= 10:
