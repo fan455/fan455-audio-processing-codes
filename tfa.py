@@ -3,12 +3,8 @@ Audio Time-Frequency Analysis codes based on numpy, scipy, resampy and matplotli
 """
 import numpy as np
 from scipy import fft, signal
-import resampy
 from pitch import cent2ratio
 from loudness import amp2db, db2amp
-
-def resample(au, sr, sr_new):
-    return resampy.resample(au, sr, sr_new, axis=0)
 
 def pitch_shift_cent(au, sr, cent):
     sr_stretch = int(np.rint(sr/cent2ratio(cent)))
@@ -26,11 +22,17 @@ def pitch_shift_ratio_2(au, sr, ratio, sr_new):
     sr_stretch = int(np.rint(sr_new/ratio))
     return resampy.resample(au, sr, sr_stretch, axis=0)
 
-def fft(y, axis=0):
-    return fft.rfft(y, axis=axis, norm='forward')
+def get_fft(y, axis=0):
+    return fft.fft(y, axis=axis, norm='backward')
 
-def ifft(z, axis=0):
-    return fft.irfft(z, axis=axis, norm='forward')
+def get_ifft(z, axis=0):
+    return fft.ifft(z, axis=axis, norm='backward')
+
+def get_rfft(y, axis=0):
+    return fft.rfft(y, axis=axis, norm='backward')
+
+def get_irfft(z, axis=0):
+    return fft.irfft(z, axis=axis, norm='backward')
 
 class dct_class():
 
@@ -213,13 +215,13 @@ class stft_class():
         print(f'p_noise.shape = {p_noise.shape}')
         return p_noise    
 
-class fft_class():
+class rfft_class():
 
     def __init__(self, sr=None, fft_type='m, p'):
         self.sr, self.fft_type = sr, fft_type
 
     def fw(self, au):
-        z = fft.rfft(au, axis=0, norm='forward')
+        z = fft.rfft(au, axis=0, norm='backward')
         print(f'au.shape = {au.shape}')
         print(f'z.shape = {z.shape}')
         if self.fft_type == 'm, p':
@@ -253,7 +255,7 @@ class fft_class():
             raise ValueError('fft_type="m" is not supported for ifft because phase is unknown.')
         else:
             raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
-        au_re = fft.irfft(z, axis=0, norm='forward')
+        au_re = fft.irfft(z, axis=0, norm='backward')
         print(f'au_re.shape = {au_re.shape}')
         return au_re
 
