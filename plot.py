@@ -21,7 +21,7 @@ def plot(y, x=None, title='title', x_label='x', y_label='y', mycolor='#D1DDC5'):
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
     
-def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, title='Decomposed Modes', x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
+def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
     assert Modes.shape[0] < Modes.shape[1]
     assert Modes.shape[1] == au.size
     N = Modes.shape[0]
@@ -61,7 +61,7 @@ def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, title='Deco
     plt.ylabel(ylabel)
     plt.show()
 
-def plot_modes_residual(Modes, res, au, sr=None, compare_residual_with_noise=True, title='Decomposed Modes', x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
+def plot_modes_residual(Modes, res, au, sr=None, compare_residual_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
     assert Modes.shape[0] < Modes.shape[1]
     assert Modes.shape[1] == res.size == au.size
     N = Modes.shape[0]
