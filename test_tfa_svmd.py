@@ -14,11 +14,11 @@ y = np.load('signal 1.npy')
 # Decompose
 class1 = rfft_class(fft_type='m')
 y_rfft = class1.fw(y)
-plot(y_rfft, title='spectrum of the original signal')
+plot(y_rfft, title='spectrum of the original signal', x_label='frequency', y_label='magnitude')
 
 Modes, res = svmd(y, out_thr=1e-5, in_thr=1e-5, out_iter_max=3, in_iter_max=50, alpha=1, beta=5, return_type='modes, residual')
 res_rfft = class1.fw(res)
-plot(res_rfft, title='spectrum of the residual')
+plot(res_rfft, title='spectrum of the residual', x_label='frequency', y_label='magnitude')
 
 if Modes.shape[0] <= 10:
     pass
