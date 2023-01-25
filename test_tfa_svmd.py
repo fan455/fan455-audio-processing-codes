@@ -4,10 +4,10 @@ from tfa_svmd import *
 from tfa import rfft_class
 
 # Define signal
-sr, du, extend = 5000, 1.0, 0.1
+sr, du, du_extend = 5000, 1.0, 0.1
 y = np.load('signal 1.npy')
-t = np.arange(int(sr*(du+2*extend)))/sr
-t -= extend
+t = np.arange(int(sr*(du+2*du_extend)))/sr
+t -= du_extend
 
 #y = 2*t + np.sin(100*np.pi*t-10*np.pi*np.square(t)) + 0.5*np.exp(-5*np.square(t-0.5))* \
      #np.sin(200*np.pi*t) + np.random.normal(scale=0.1, size=t.size)
@@ -53,5 +53,5 @@ else:
     raise ValueError('Too many modes.')
 
 # Plot
-plot_modes(Modes, y, t)
-#plot_modes_residual(Modes, res, y, t)
+#plot_modes(Modes, y, t)
+plot_modes_residual(Modes, res, y, t)
