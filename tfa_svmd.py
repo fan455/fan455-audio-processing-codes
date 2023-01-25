@@ -30,7 +30,7 @@ def abs2(x):
     #return np.square(x.real) + np.square(x.imag)
     return x.real**2 + x.imag**2 # This line seems faster than the above line.
 
-def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1e+1, beta=1e-1, return_type='modes'):
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1e+1, beta=1e-1, return_type='modes'):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
@@ -47,8 +47,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1
     y_modes: nd real array. The decomposed modes of y of shape (number of modes, size of y), excluding or including residual.
     y_res: The residue of input after subtracting previous modes.
     """
-    print('SVMD started.')
-    print()
+    print('SVMD started.', '\n')
     start_time = timeit.default_timer()
     print('Input information:')
     assert y.ndim == 1, 'y.ndim = {y.ndim}'
@@ -61,19 +60,16 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1
         y = np.append(y, 0.0)
         # make input size odd because even fft size will result in a frequency that is both positive and negative.
         print('The input is padded 1 zero at the end because its size is even.')
-    print(f'input_size_is_odd = {input_size_is_odd}')
-    print()
+    print(f'input_size_is_odd = {input_size_is_odd}', '\n')
 
     print('Decomposition information:')
     z = 2*scipy.fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
-    print(f'z.size = {z.size}')
-    print()
+    print(f'z.size = {z.size}', '\n')
     z_idx = np.arange(z.size)
     z_modes = []
     
     for k in range(1, out_iter_max+1):
         f0 = np.argmax(np.abs(z))
-        print(f'{k}th outer iteration')
         mode_prev = np.zeros(z.size, dtype=complex)
         #mode_prev[f0] = abs(z[f0])
         mode_prev[f0] = z[f0] # I'm not sure if this line or the above line is correct.
@@ -92,9 +88,8 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1
             else:
                 break
 
-        print(f'f0 = {f0}, fc = {round(fc, 4)}')
-        print(f'took {i} inner iterations.')
-        print()
+        print(f'The {k}th outer iteration took {i} inner iterations.')
+        print(f'f0 = {f0}, fc = {round(fc, 2)}', '\n')
         z_modes.append(mode_next)
         z -= mode_next
         if np.sum(abs2(z)) <= out_thr:
@@ -106,12 +101,10 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1
     y_modes = np.real(scipy.fft.ifft(z_modes, axis=1, norm='backward')) # transform output back to time domain.
     if not input_size_is_odd:
         y_modes = np.delete(y_modes, -1, axis=1) # delete the last element of output to compensate.
-    print('The last element of output is deleted because input size is even.')
+    print('The last element of output is deleted because input size is even.', '\n')
     assert y_modes.shape[1] == y_size, f'y_modes.shape[1] = {y_modes.shape[1]}'
-    print()
     end_time = timeit.default_timer()
-    print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.')
-    print()
+    print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.', '\n')
     if return_type == 'modes':
         return y_modes
     elif return_type == 'modes, residual':
