@@ -4,14 +4,13 @@ from tfa_svmd import *
 from tfa import get_rfftm
 
 # Define signal
-sr, du, du_extend = 5000, 1.0, 0.1
-y = np.load('signal 1.npy')
-t = np.arange(int(sr*(du+2*du_extend)))/sr
-t -= du_extend
+sr, du, du_extend = 5000, 1.0, 0.2
+y = np.load('signal 1 extended.npy')
+t = np.arange(int(sr*(du+2*du_extend)))/sr - du_extend
 
 #y = 2*t + np.sin(100*np.pi*t-10*np.pi*np.square(t)) + 0.5*np.exp(-5*np.square(t-0.5))* \
      #np.sin(200*np.pi*t) + np.random.normal(scale=0.1, size=t.size)
-#np.save('signal 1.npy', y)
+#np.save('signal 1 extended.npy', y)
 
 # Decompose
 y_rfft = get_rfftm(y)
