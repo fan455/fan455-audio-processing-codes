@@ -21,14 +21,10 @@ def plot(y, x=None, title='title', x_label='x', y_label='y', mycolor='#D1DDC5'):
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
     
-def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
+def plot_modes(Modes, au, t, compare_residual_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
     assert Modes.shape[0] < Modes.shape[1]
     assert Modes.shape[1] == au.size
-    N = Modes.shape[0]
-    if sr:
-        x = np.arange(au.size)/sr
-    else:
-        x = np.arange(au.size)    
+    N = Modes.shape[0]    
 
     if compare_residual_with_noise:
         fig, ax = plt.subplots(N+2, 1)
@@ -39,36 +35,32 @@ def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, x_label='ti
         noise[1] = -0.5
         ax[N+1].set_title('compare with noise')
         ax[N+1].set_facecolor(mycolor)
-        ax[N+1].plot(x, noise, color='gray')       
+        ax[N+1].plot(t, noise, color='gray')       
     else:
         fig, ax = plt.subplots(N+1, 1)
   
     ax[0].set_title('original signal')
     ax[0].set_facecolor(mycolor)
-    ax[0].plot(x, au, color='green')
+    ax[0].plot(t, au, color='green')
     
     for i in range(1, N):
         ax[i].set_title(f'mode {i}')     
         ax[i].set_facecolor(mycolor)
-        ax[i].plot(x, Modes[i-1, :]) 
+        ax[i].plot(t, Modes[i-1, :]) 
 
     ax[N].set_title('residual')
     ax[N].set_facecolor(mycolor)
-    ax[N].plot(x, Modes[N-1, :])
+    ax[N].plot(t, Modes[N-1, :])
     
     fig.set_facecolor(mycolor)
     plt.xlabel(x_label)
     plt.ylabel(ylabel)
     plt.show()
 
-def plot_modes_residual(Modes, res, au, sr=None, compare_residual_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
+def plot_modes_residual(Modes, res, au, t, compare_residual_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
     assert Modes.shape[0] < Modes.shape[1]
     assert Modes.shape[1] == res.size == au.size
-    N = Modes.shape[0]
-    if sr:
-        x = np.arange(au.size)/sr
-    else:
-        x = np.arange(au.size)    
+    N = Modes.shape[0]   
 
     if compare_residual_with_noise:
         fig, ax = plt.subplots(N+3, 1)
@@ -79,22 +71,22 @@ def plot_modes_residual(Modes, res, au, sr=None, compare_residual_with_noise=Tru
         noise[1] = -0.5
         ax[N+2].set_title('compare with noise')
         ax[N+2].set_facecolor(mycolor)
-        ax[N+2].plot(x, noise, color='gray')       
+        ax[N+2].plot(t, noise, color='gray')       
     else:
         fig, ax = plt.subplots(N+1, 1)
   
     ax[0].set_title('original signal')
     ax[0].set_facecolor(mycolor)
-    ax[0].plot(x, au, color='green')
+    ax[0].plot(t, au, color='green')
     
     for i in range(1, N+1):
         ax[i].set_title(f'mode {i}')     
         ax[i].set_facecolor(mycolor)
-        ax[i].plot(x, Modes[i-1, :]) 
+        ax[i].plot(t, Modes[i-1, :]) 
 
     ax[N+1].set_title('residual')
     ax[N+1].set_facecolor(mycolor)
-    ax[N+1].plot(x, res)
+    ax[N+1].plot(t, res)
     
     fig.set_facecolor(mycolor)
     plt.xlabel(x_label)
