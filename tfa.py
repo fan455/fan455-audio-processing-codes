@@ -34,6 +34,12 @@ def get_rfft(y, axis=0):
 def get_irfft(z, axis=0):
     return fft.irfft(z, axis=axis, norm='backward')
 
+def get_fftm(y, axis=0):
+    return np.abs(fft.fft(y, axis=axis, norm='backward'))
+
+def get_rfftm(y, axis=0):
+    return np.abs(fft.rfft(y, axis=axis, norm='backward'))
+
 class dct_class():
 
     def __init__(self, sr=None, dct_type=2):
