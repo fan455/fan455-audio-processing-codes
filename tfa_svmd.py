@@ -30,7 +30,7 @@ def abs2(x):
     #return np.square(x.real) + np.square(x.imag)
     return x.real**2 + x.imag**2 # This line seems faster than the above line.
 
-def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1, beta=1e+1, return_type='modes'):
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1, beta=1e-2, return_type='modes'):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
@@ -95,7 +95,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1,
         if np.sum(abs2(z)) <= out_thr:
             break
         
-    print(f'Totally {k+1} Modes decomposed.')
+    print(f'Totally {k} modes extracted, excluding residual.')
     Modes.append(z)
     Modes = np.append(np.array(Modes), np.zeros((k+1, y_size//2)), axis=1)
     Modes = np.real(scipy.fft.ifft(Modes, axis=1, norm='backward')) # transform output back to time domain.
