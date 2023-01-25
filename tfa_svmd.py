@@ -65,23 +65,23 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1,
     print('Decomposition information:')
     z = 2*scipy.fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
     print(f'z.size = {z.size}', '\n')
-    z_idx = np.arange(z.size)
+    f = np.arange(z.size)
     Modes = []
     
     for k in range(1, out_iter_max+1):
         f0 = np.argmax(np.abs(z))
-        mode_prev = np.zeros(z.size, dtype=complex)
+        mode_prev = np.zeros(z.size, dtype=np.complex128)
         #mode_prev[f0] = abs(z[f0])
         mode_prev[f0] = z[f0] # I'm not sure if this line or the above line is correct.
-        
+            
         for i in range(1, in_iter_max+1):
             mode_prev_sq = abs2(mode_prev)
-            fc = np.sum(z_idx*mode_prev_sq)/np.sum(mode_prev_sq)
+            fc = np.sum(f*mode_prev_sq)/np.sum(mode_prev_sq)
             z_prev = z - mode_prev
             z_prev_sq = abs2(z_prev)
-            fc_res = np.sum(z_idx*z_prev_sq)/np.sum(z_prev_sq)
-            mode_next = (z*(1 + beta*np.square(z_idx-fc_res)))/ \
-                        (1+alpha*np.square(z_idx-fc) + beta*np.square(z_idx-fc_res))
+            fc_res = np.sum(f*z_prev_sq)/np.sum(z_prev_sq)
+            mode_next = (z*(1 + beta*np.square(f-fc_res)))/ \
+                        (1 + alpha*np.square(f-fc) + beta*np.square(f-fc_res))
             #if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
             if np.sum(abs2(mode_next-mode_prev)) > in_thr: # I'm not sure if this line or the above line is correct.
                 mode_prev = mode_next.copy()
