@@ -1,5 +1,5 @@
 """
-plot
+Plot
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,19 +21,19 @@ def plot(y, x=None, title='title', x_label='x', y_label='y', mycolor='#D1DDC5'):
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
     
-def plot_modes(Modes, au, t, compare_residual_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
+def plot_modes(Modes, au, t, compare_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
     assert Modes.shape[0] < Modes.shape[1]
     assert Modes.shape[1] == au.size
     N = Modes.shape[0]    
 
-    if compare_residual_with_noise:
+    if compare_with_noise:
         fig, ax = plt.subplots(N+2, 1)
         noise = 0.1*np.random.normal(size=au.size)
         noise[noise>0.3] = 0.3
         noise[noise<-0.3] = -0.3
-        noise[0] = 0.5
-        noise[1] = -0.5
-        ax[N+1].set_title('compare with noise')
+        noise[0] = -0.5
+        noise[-1] = 0.5
+        ax[N+1].set_title('compare with Gaussian noise')
         ax[N+1].set_facecolor(mycolor)
         ax[N+1].plot(t, noise, color='gray')       
     else:
@@ -57,19 +57,19 @@ def plot_modes(Modes, au, t, compare_residual_with_noise=True, x_label='time', y
     plt.ylabel(ylabel)
     plt.show()
 
-def plot_modes_residual(Modes, res, au, t, compare_residual_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
+def plot_modes_residual(Modes, res, au, t, compare_with_noise=True, x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
     assert Modes.shape[0] < Modes.shape[1]
     assert Modes.shape[1] == res.size == au.size
     N = Modes.shape[0]   
 
-    if compare_residual_with_noise:
+    if compare_with_noise:
         fig, ax = plt.subplots(N+3, 1)
         noise = 0.1*np.random.normal(size=au.size)
         noise[noise>0.3] = 0.3
         noise[noise<-0.3] = -0.3
-        noise[0] = 0.5
-        noise[1] = -0.5
-        ax[N+2].set_title('compare with noise')
+        noise[0] = -0.5
+        noise[-1] = 0.5
+        ax[N+2].set_title('compare with Gaussian noise')
         ax[N+2].set_facecolor(mycolor)
         ax[N+2].plot(t, noise, color='gray')       
     else:
