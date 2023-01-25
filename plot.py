@@ -4,14 +4,17 @@ plot
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot(x, y, title='title', x_label='x', y_label='y', mycolor='#D1DDC5'):
+def plot(y, x=None, title='title', x_label='x', y_label='y', mycolor='#D1DDC5'):
     """
     x, y: 1d arrays with the same size.
     """
     fig, ax = plt.subplots()
     fig.patch.set_facecolor(mycolor)
     ax.patch.set_facecolor(mycolor)
-    ax.plot(x, y)
+    if x:
+        ax.plot(x, y)
+    else:
+        ax.plot(y)
     ax.set_title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
