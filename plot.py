@@ -23,8 +23,7 @@ def plot(y, x=None, title='title', x_label='x', y_label='y', mycolor='#D1DDC5'):
     
 def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, title='Decomposed Modes', x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
     assert Modes.shape[0] < Modes.shape[1]
-    assert au.ndim == 1
-    assert au.shape[-1] == Modes.shape[-1]
+    assert Modes.shape[1] == au.size
     N = Modes.shape[0]
     if sr:
         x = np.arange(au.size)/sr
@@ -60,7 +59,47 @@ def plot_modes(Modes, au, sr=None, compare_residual_with_noise=True, title='Deco
     fig.set_facecolor(mycolor)
     plt.xlabel(x_label)
     plt.ylabel(ylabel)
-    plt.show()    
+    plt.show()
+
+def plot_modes_residual(Modes, res, au, sr=None, compare_residual_with_noise=True, title='Decomposed Modes', x_label='time', ylabel='magnitude', mycolor='#D1DDC5'):
+    assert Modes.shape[0] < Modes.shape[1]
+    assert Modes.shape[1] == res.size == au.size
+    N = Modes.shape[0]
+    if sr:
+        x = np.arange(au.size)/sr
+    else:
+        x = np.arange(au.size)    
+
+    if compare_residual_with_noise:
+        fig, ax = plt.subplots(N+3, 1)
+        noise = 0.1*np.random.normal(size=au.size)
+        noise[noise>0.3] = 0.3
+        noise[noise<-0.3] = -0.3
+        noise[0] = 0.5
+        noise[1] = -0.5
+        ax[N+2].set_title('compare with noise')
+        ax[N+2].set_facecolor(mycolor)
+        ax[N+2].plot(x, noise, color='gray')       
+    else:
+        fig, ax = plt.subplots(N+1, 1)
+  
+    ax[0].set_title('original signal')
+    ax[0].set_facecolor(mycolor)
+    ax[0].plot(x, au, color='green')
+    
+    for i in range(1, N+1):
+        ax[i].set_title(f'mode {i}')     
+        ax[i].set_facecolor(mycolor)
+        ax[i].plot(x, Modes[i-1, :]) 
+
+    ax[N+1].set_title('residual')
+    ax[N+1].set_facecolor(mycolor)
+    ax[N+1].plot(x, res)
+    
+    fig.set_facecolor(mycolor)
+    plt.xlabel(x_label)
+    plt.ylabel(ylabel)
+    plt.show()  
 
 def plot_pdf(x, title='probability density function', x_label='x', y_label='density', mycolor='#D1DDC5'):
     import seaborn as sns
