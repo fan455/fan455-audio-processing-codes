@@ -30,7 +30,7 @@ def abs2(x):
     #return np.square(x.real) + np.square(x.imag)
     return x.real**2 + x.imag**2 # This line seems faster than the above line.
 
-def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1e+1, beta=1e-1, return_type='modes'):
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1e+1, beta=1e-1):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
@@ -40,11 +40,9 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1e
     in_iter_max: positive int. Maxinum inner iteration times. It can avoid endless iteration case.
     alpha: positive float. Penalty coffecient for the second quadratic term in the optimization.
     beta: positive float. Penalty coffecient for the third quadratic term in the optimization.
-    return_type: str, 'modes' or 'modes, residual'. If 'modes', return y_modes array including residual at index [-1, :].
-        If 'residual', return tuple (y_modes, y_res).
 
     Returns (depending on return_type):
-    y_modes: nd real array. The decomposed modes of y of shape (number of modes, size of y), excluding or including residual.
+    y_modes: nd real array. The decomposed modes of y of shape (number of modes, size of y), including the residual.
     y_res: The residue of input after subtracting previous modes.
     """
     print('SVMD started.', '\n')
@@ -105,20 +103,4 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1e
     assert y_modes.shape[1] == y_size, f'y_modes.shape[1] = {y_modes.shape[1]}'
     end_time = timeit.default_timer()
     print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.', '\n')
-    if return_type == 'modes':
-        return y_modes
-    elif return_type == 'modes, residual':
-        return y_modes[:-1, :], y_modes[-1, :]
-    else:
-        raise ValueError(f'return_type "{return_type}" is not supported.')
-
-def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1e+1, beta=1e-1):
-    print('Refined SVMD started.')
-    start_time = timeit.default_timer()
-
-
-    
-    end_time = timeit.default_timer()
-    print(f'Refined SVMD completed, running time: {round((end_time-start_time), 4)} seconds.')
-
-    
+    return y_modes
