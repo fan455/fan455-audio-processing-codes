@@ -67,11 +67,13 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1
     print('Decomposition information:')
     z = 2*scipy.fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
     print(f'z.size = {z.size}')
+    print()
     z_idx = np.arange(z.size)
     z_modes = []
     
     for k in range(1, out_iter_max+1):
         f0 = np.argmax(np.abs(z))
+        print(f'{k}th outer iteration')
         mode_prev = np.zeros(z.size, dtype=complex)
         #mode_prev[f0] = abs(z[f0])
         mode_prev[f0] = z[f0] # I'm not sure if this line or the above line is correct.
@@ -90,7 +92,9 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=20, in_iter_max=50, alpha=1
             else:
                 break
 
-        print(f'The {k}th outer iteration took {i} inner iterations.')
+        print(f'f0 = {f0}, fc = {round(fc, 4)}')
+        print(f'took {i} inner iterations.')
+        print()
         z_modes.append(mode_next)
         z -= mode_next
         if np.sum(abs2(z)) <= out_thr:
