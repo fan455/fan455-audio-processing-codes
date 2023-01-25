@@ -4,9 +4,11 @@ from tfa_svmd import *
 from tfa import rfft_class
 
 # Define signal
-sr = 5000
-t = np.arange(sr)/sr
+sr, du, extend = 5000, 1.0, 0.1
 y = np.load('signal 1.npy')
+t = np.arange(int(sr*(du+2*extend)))/sr
+t -= extend
+
 #y = 2*t + np.sin(100*np.pi*t-10*np.pi*np.square(t)) + 0.5*np.exp(-5*np.square(t-0.5))* \
      #np.sin(200*np.pi*t) + np.random.normal(scale=0.1, size=t.size)
 #np.save('signal 1.npy', y)
@@ -16,7 +18,7 @@ class1 = rfft_class(fft_type='m')
 y_rfft = class1.fw(y)
 plot(y_rfft, title='spectrum of the original signal', x_label='frequency', y_label='magnitude')
 
-Modes, res = svmd(y, out_thr=1e-5, in_thr=1e-5, out_iter_max=3, in_iter_max=50, alpha=1, beta=5, return_type='modes, residual')
+Modes, res = svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=3, in_iter_max=50, alpha=1, beta=1e-2, return_type='modes, residual')
 res_rfft = class1.fw(res)
 plot(res_rfft, title='spectrum of the residual', x_label='frequency', y_label='magnitude')
 
@@ -51,5 +53,5 @@ else:
     raise ValueError('Too many modes.')
 
 # Plot
-#plot_modes(Modes, y, sr)
-plot_modes_residual(Modes, res, y, sr)
+plot_modes(Modes, y, t)
+#plot_modes_residual(Modes, res, y, t)
