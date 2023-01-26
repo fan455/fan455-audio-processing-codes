@@ -113,7 +113,7 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
     You will be prompted a input requirement to determine the mode number after you have analyzed the normalized distances between modes.
 
     Parameters: (additional)
-    merge_range: positive float. Determine the lower and upper limit of merge range on a multiplication basis.
+    merge_range: float larger than 1. Determine the lower and upper limit of merge range on a multiplication basis.
         For example, for mode_i (i<=mode number) with center frequency of 15Hz and merge range 1.5, only modes with center frequencies
         in range (10, 22.5)Hz can be merged into mode_i.
     """
