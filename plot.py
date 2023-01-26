@@ -9,8 +9,8 @@ def plot(y, x=None, title='title', x_label='x', y_label='y', bgcolor='#D1DDC5', 
     x, y: 1d arrays with the same size.
     """
     fig, ax = plt.subplots()
-    fig.patch.set_facecolor(bgcolor)
-    ax.patch.set_facecolor(bgcolor)
+    fig.set_facecolor(bgcolor)
+    ax.set_facecolor(bgcolor)
     if x is None:
         ax.plot(y, **kwargs)
     else:
@@ -33,7 +33,6 @@ def plot_modes(Modes, au, t, compare_with_noise=True, x_label='time', ylabel='ma
         noise[noise<-0.3] = -0.3
         noise[0] = -0.5
         noise[-1] = 0.5
-        
         ax[N+1].set_title('compare with Gaussian noise')
         ax[N+1].set_facecolor(bgcolor)
         ax[N+1].plot(t, noise, color='gray')       
@@ -116,8 +115,8 @@ def plot_au_mono(au, sr, title='title', bgcolor='#D1DDC5'):
     """
     t = np.arange(au.size)/sr
     fig, ax = plt.subplots()
-    fig.patch.set_facecolor(bgcolor)
-    ax.patch.set_facecolor(bgcolor)
+    fig.set_facecolor(bgcolor)
+    ax.set_facecolor(bgcolor)
     ax.plot(t, au)
     ax.set_title(title)
     plt.xlabel('time')
