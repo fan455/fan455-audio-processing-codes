@@ -4,7 +4,7 @@ Plot
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot(y, x=None, title='title', x_label='x', y_label='y', bgcolor='#D1DDC5'):
+def plot(y, x=None, title='title', x_label='x', y_label='y', bgcolor='#D1DDC5', **kwargs):
     """
     x, y: 1d arrays with the same size.
     """
@@ -12,9 +12,9 @@ def plot(y, x=None, title='title', x_label='x', y_label='y', bgcolor='#D1DDC5'):
     fig.patch.set_facecolor(bgcolor)
     ax.patch.set_facecolor(bgcolor)
     if x is None:
-        ax.plot(y)
+        ax.plot(y, **kwargs)
     else:
-        ax.plot(x, y)
+        ax.plot(x, y, **kwargs)
     ax.set_title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
