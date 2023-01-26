@@ -11,10 +11,10 @@ def plot(y, x=None, title='title', x_label='x', y_label='y', bgcolor='#D1DDC5'):
     fig, ax = plt.subplots()
     fig.patch.set_facecolor(bgcolor)
     ax.patch.set_facecolor(bgcolor)
-    if x:
-        ax.plot(x, y)
-    else:
+    if x is None:
         ax.plot(y)
+    else:
+        ax.plot(x, y)
     ax.set_title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
