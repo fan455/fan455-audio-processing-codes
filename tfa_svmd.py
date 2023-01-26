@@ -71,8 +71,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1,
     for k in range(1, out_iter_max+1):
         f0 = np.argmax(np.abs(z))
         mode_prev = np.zeros(z.size, dtype=np.complex128)
-        #mode_prev[f0] = abs(z[f0])
-        mode_prev[f0] = z[f0] # I'm not sure if this line or the above line is correct.
+        mode_prev[f0] = z[f0]
             
         for i in range(1, in_iter_max+1):
             mode_prev_sq = abs2(mode_prev)
@@ -80,8 +79,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1,
             z_prev_sq = abs2(z - mode_prev)
             fc_res = np.sum(f*z_prev_sq)/np.sum(z_prev_sq)
             mode_next = (z*(1+beta*np.square(f-fc_res)))/(1+alpha*np.square(f-fc)+beta*np.square(f-fc_res))
-            #if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
-            if np.sum(abs2(mode_next-mode_prev)) > in_thr: # I'm not sure if this line or the above line is correct.
+            if np.sum(abs2(mode_next-mode_prev)) > in_thr:
                 mode_prev = mode_next.copy()
             else:
                 break
@@ -144,8 +142,7 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
     for k in range(1, out_iter_max+1):
         f0 = np.argmax(np.abs(z))
         mode_prev = np.zeros(z.size, dtype=np.complex128)
-        #mode_prev[f0] = abs(z[f0])
-        mode_prev[f0] = z[f0] # I'm not sure if this line or the above line is correct.
+        mode_prev[f0] = z[f0]
             
         for i in range(1, in_iter_max+1):
             mode_prev_sq = abs2(mode_prev)
@@ -153,8 +150,7 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
             z_prev_sq = abs2(z - mode_prev)
             fc_res = np.sum(f*z_prev_sq)/np.sum(z_prev_sq)
             mode_next = (z*(1+beta*np.square(f-fc_res)))/(1+alpha*np.square(f-fc)+beta*np.square(f-fc_res))
-            #if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
-            if np.sum(abs2(mode_next-mode_prev)) > in_thr: # I'm not sure if this line or the above line is correct.
+            if np.sum(abs2(mode_next-mode_prev)) > in_thr:
                 mode_prev = mode_next.copy()
             else:
                 break
@@ -181,9 +177,11 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
         distance = np.amin(np.sqrt(np.average(np.square(norm[:i,:]*Modes[:i,:] - norm[i,0]*Modes[i,:]), axis=1)))
         Distances.append(distance)
     Distances = np.array(Distances)
-    print('Please input after closing this figure:')
+    print('Please type input after closing this figure:')
     print(f'(Tip: Choose the mode number after which the distance sharply drops closer to zero.)')
-    plot(Distances, np.arange(2, k+1), x_label='mode number', y_label='minimum normalized distance')
+    plot(Distances, np.arange(2, k+1), title='determine mode number', x_label='mode number', \
+         y_label='minimum normalized distance', color='tab:grey', linestyle='--', \
+         marker='.', markersize=12.0, mec='black', mfc='black')
     nMode = int(input(f'Number of modes (should be less than {k}): '))
 
     Fc = np.array(Fc)
