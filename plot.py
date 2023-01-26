@@ -33,6 +33,7 @@ def plot_modes(Modes, au, t, compare_with_noise=True, x_label='time', ylabel='ma
         noise[noise<-0.3] = -0.3
         noise[0] = -0.5
         noise[-1] = 0.5
+        
         ax[N+1].set_title('compare with Gaussian noise')
         ax[N+1].set_facecolor(bgcolor)
         ax[N+1].plot(t, noise, color='gray')       
