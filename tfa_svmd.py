@@ -77,11 +77,9 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1,
         for i in range(1, in_iter_max+1):
             mode_prev_sq = abs2(mode_prev)
             fc = np.sum(f*mode_prev_sq)/np.sum(mode_prev_sq)
-            z_prev = z - mode_prev
-            z_prev_sq = abs2(z_prev)
+            z_prev_sq = abs2(z - mode_prev)
             fc_res = np.sum(f*z_prev_sq)/np.sum(z_prev_sq)
-            mode_next = (z*(1 + beta*np.square(f-fc_res)))/ \
-                        (1 + alpha*np.square(f-fc) + beta*np.square(f-fc_res))
+            mode_next = (z*(1+beta*np.square(f-fc_res)))/(1+alpha*np.square(f-fc)+beta*np.square(f-fc_res))
             #if np.sum(np.square(np.abs(mode_next)-np.abs(mode_prev))) > in_thr:
             if np.sum(abs2(mode_next-mode_prev)) > in_thr: # I'm not sure if this line or the above line is correct.
                 mode_prev = mode_next.copy()
@@ -104,7 +102,7 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1,
     print('The last element of output is deleted because input size is even.', '\n')
     assert Modes.shape[1] == y_size, f'Modes.shape[1] = {Modes.shape[1]}'
     end_time = timeit.default_timer()
-    print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.', '\n')
+    print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.')
     if return_type == 'modes':
         return Modes
     elif return_type == 'modes, residual':
