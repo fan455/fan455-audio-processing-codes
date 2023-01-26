@@ -1,5 +1,7 @@
+# SVMD test using signal 1 from the paper 'A Sequential Variational Mode Decomposition Method'.
+
 import numpy as np
-from plot import *
+from plot import plot, plot_modes_residual
 from tfa_svmd import *
 from tfa import get_rfftm
 
@@ -12,13 +14,18 @@ t = np.arange(int(sr*(du+2*du_extend)))/sr - du_extend
      #np.sin(200*np.pi*t) + np.random.normal(scale=0.1, size=t.size)
 #np.save('signal 1 extended.npy', y)
 
+# Set parameters
+out_thr, in_thr = 1e-5, 1e-10
+out_iter_max, in_iter_max = 3, 150
+alpha, beta = 1, 1e-2
+merge_range = 1.5
+return_type = 'modes, residual'
+
 # Decompose
 y_rfft = get_rfftm(y)
-plot(y_rfft, title='spectrum of the original signal', x_label='frequency', y_label='magnitude')
-
-Modes, res = svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=3, in_iter_max=50, alpha=1, beta=1e-2, return_type='modes, residual')
+Modes, res = svmd(y, out_thr, in_thr, out_iter_max, in_iter_max, alpha, beta, return_type)
+#Modes, res = svmd_refined(y, out_thr, in_thr, out_iter_max, in_iter_max, alpha, beta, merge_range, return_type)
 res_rfft = get_rfftm(res)
-plot(res_rfft, title='spectrum of the residual', x_label='frequency', y_label='magnitude')
 
 if Modes.shape[0] <= 10:
     pass
@@ -51,5 +58,6 @@ else:
     raise ValueError('Too many modes.')
 
 # Plot
-#plot_modes(Modes, y, t)
+plot(y_rfft, title='spectrum of the original signal', x_label='frequency', y_label='magnitude')
+plot(res_rfft, title='spectrum of the residual', x_label='frequency', y_label='magnitude')
 plot_modes_residual(Modes, res, y, t)
