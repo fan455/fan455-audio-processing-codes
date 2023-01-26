@@ -24,7 +24,6 @@ archivePrefix = {arXiv},
 import timeit
 import numpy as np
 import scipy.fft
-from plot import plot
 
 def abs2(x):
     # Avoid square root calculation.
@@ -120,6 +119,7 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
         For example, for mode_i (i<=mode number) with center frequency of 15Hz and merge range 1.5, only modes with center frequencies
         in range (10, 22.5)Hz can be merged into mode_i.
     """
+    from plot import plot
     print('SVMD started.', '\n')
     start_time = timeit.default_timer()
     print('Input information:')
@@ -184,8 +184,8 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
     print('Please input after closing this figure:')
     print(f'(Tip: Choose the mode number after which the distance sharply drops closer to zero.)')
     plot(Distances, np.arange(2, k+1), x_label='mode number', y_label='minimum normalized distance')
-    nMode = int(input(f'Determine the number of modes (should be less than {k}): '))
-    
+    nMode = int(input(f'Number of modes (should be less than {k}): '))
+
     Fc = np.array(Fc)
     Fc_main = np.broadcast_to(Fc[:nMode].reshape((nMode,1)), (nMode, k-nMode))
     Fc_other = np.broadcast_to(Fc[nMode:].reshape((1, k-nMode)), (nMode, k-nMode))
@@ -193,8 +193,12 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
     Merge[Fc[nMode:] < Fc[Merge]/merge_range] = k
     Merge[Fc[nMode:] > Fc[Merge]*merge_range] = k    
     for i in range(nMode, k):
-        Modes[i-nMode] += Modes[i]
-        print(f'mode {i+1} is merged into mode {i-nMode+1}')
+        merge = Merge[i-nMode]
+        Modes[merge] += Modes[i]
+        if merge != k:
+            print(f'mode {i+1} is merged into mode {merge+1}.')
+        else:
+            print(f'mode {i+1} is merged into the residual.')
     Modes = np.delete(Modes, np.arange(nMode, k), axis=0)
     
     end_time = timeit.default_timer()
