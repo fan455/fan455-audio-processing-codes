@@ -183,7 +183,7 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
     plot(Distances, np.arange(2, k+1), title='determine mode number', x_label='mode number', \
          y_label='minimum normalized distance', color='tab:grey', linestyle='--', \
          marker='.', markersize=12.0, mec='black', mfc='black')
-    nMode = int(input(f'Number of modes (should be less than {k}): '))
+    nMode = int(input(f'Number of modes (should <= {k}): '))
 
     Fc = np.array(Fc)
     Fc_main = np.broadcast_to(Fc[:nMode].reshape((nMode,1)), (nMode, k-nMode))
