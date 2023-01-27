@@ -24,8 +24,16 @@ def change_vol(au, db_change):
     return au*db2amp(db_change)
 
 def check_clipping(au):
-    if np.amax(np.abs(au)) >= 1:
-        raise ValueError('Clipping has occurred.')
+    assert np.amax(np.abs(au)) >= 1, 'Clipping has occurred.'
+    
+def re_compare(au, au_re, sr):
+    print('reconstruction comparison:')
+    if sr:
+        print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
+    if au.ndim == 2:
+        print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
+    elif au.ndim == 1:
+        print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
 
 class mLUFS_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
