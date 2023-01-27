@@ -3,6 +3,7 @@ Plot
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 def plot(y, x=None, title='title', x_label='x', y_label='y', bgcolor='#D1DDC5', **kwargs):
     """
@@ -94,7 +95,6 @@ def plot_modes_residual(Modes, res, au, t, compare_with_noise=True, x_label='tim
     plt.show()  
 
 def plot_pdf(x, title='probability density function', x_label='x', y_label='density', bgcolor='#D1DDC5'):
-    import seaborn as sns
     """
     Plot the probability density function of x.
     x: 1d array.
