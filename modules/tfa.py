@@ -3,57 +3,66 @@ Audio Time-Frequency Analysis
 """
 import numpy as np
 from scipy import fft, signal
-from modules.loudness import amp2db, db2amp
+
+def get_fftm(y, axis=0):
+    # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
+    return np.abs(fft.fft(y, axis=axis, norm='backward'))
+
+def get_rfftm(y, axis=0):
+    # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
+    return np.abs(fft.rfft(y, axis=axis, norm='backward'))
 
 def get_fft(y, axis=0):
     return fft.fft(y, axis=axis, norm='backward')
 
-def get_ifft(z, axis=0):
-    return fft.ifft(z, axis=axis, norm='backward')
+def get_ifft(y_fft, axis=0):
+    return fft.ifft(y_fft, axis=axis, norm='backward')
 
 def get_rfft(y, axis=0):
     return fft.rfft(y, axis=axis, norm='backward')
 
-def get_irfft(z, axis=0):
-    return fft.irfft(z, axis=axis, norm='backward')
+def get_irfft(y_rfft, axis=0):
+    return fft.irfft(y_rfft, axis=axis, norm='backward')
 
-def get_fftm(y, axis=0):
-    return np.abs(fft.fft(y, axis=axis, norm='backward'))
+def get_dct(y, axis=0, dct_type=2):
+    return fft.dct(au, dct_type, axis=axis, norm='backward')
 
-def get_rfftm(y, axis=0):
-    return np.abs(fft.rfft(y, axis=axis, norm='backward'))
+def get_idct(y_dct, axis=0, dct_type=2):
+    return fft.idct(y_dct, dct_type, axis=axis, norm='backward')
 
-class dct_class():
+def get_hilbert(y, axis=0):
+    return signal.hilbert(y, axis=axis)
 
-    def __init__(self, sr=None, dct_type=2):
-        self.sr, self.dct_type = sr, dct_type
+def get_hilbert_ap(y, axis=0):
+    # This returns (am, pm), the instaneous amplitude and phase arrays.
+    ya = signal.hilbert(y, axis=axis)
+    return np.abs(ya), np.unwrap(np.angle(ya))
 
-    def fw(self, au):
-        print(f'au.shape = {au.shape}')
-        au_dct = fft.dct(au, self.dct_type, axis=0, norm='forward')
-        print(f'au_dct.shape = {au_dct.shape}')
-        print(f'au_dct.dtype = {au_dct.dtype}')
-        return au_dct
+def get_hilbert_af(y, sr, axis=0):
+    # This returns (am, fm), the instaneous amplitude and frequency arrays.
+    # The length of the fm array is reduced by one.
+    ya = signal.hilbert(y, axis=axis)
+    return np.abs(ya), 0.5*sr*np.diff(np.unwrap(np.angle(ya)))/np.pi
 
-    def bw(self, au_dct):
-        au_re = fft.idct(au_dct, self.dct_type, axis=0, norm='forward')
-        print(f'au_re.shape = {au_re.shape}')
-        return au_re
+def get_hilbert_apf(y, sr, axis=0):
+    # This returns (am, pm, fm), the instaneous amplitude, phase and frequency arrays.
+    # The length of the fm array is reduced by one.
+    ya = signal.hilbert(y, axis=axis)
+    am = np.abs(ya)
+    pm = np.unwrap(np.angle(ya))
+    fm = 0.5*sr*np.diff(pm)/np.pi
+    return am, pm, fm
 
-    def re(self, au):          
-        au_dct = self.fw(au)
-        au_re = self.bw(au_dct)
-        return au_re 
+def get_ihilbert(ya):
+    return np.real(ya)
 
-    def re_compare(self, au, au_re):
-        print('reconstruction comparison:')
-        if self.sr:
-            print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
-        if au.ndim == 2:
-            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
-        elif au.ndim == 1:
-            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
-    
+def get_ihilbert_ap(am, pm):
+    ya = np.empty(am.shape, dtype=np.complex128)
+    return am*np.cos(pm)
+"""
+def get_ihilbert_af(am, fm, sr, initial_phase)
+    pm = 
+"""
 class stft_class():
 
     def __init__(self, sr, T=0.025, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
@@ -177,14 +186,6 @@ class stft_class():
             raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
         return au_re        
 
-    def re_compare(self, au, au_re):
-        print('reconstruction comparison:')   
-        print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
-        if au.ndim == 2:
-            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
-        elif au.ndim == 1:
-            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
-
     def get_random_phase(self, nsample, m_ndim):
         if m_ndim == 3:
             if self.GLA_random_phase_type == 'mono':
@@ -203,75 +204,6 @@ class stft_class():
         p_noise = np.angle(z_noise*np.exp(0.5*np.pi*1.0j))
         print(f'p_noise.shape = {p_noise.shape}')
         return p_noise    
-
-class rfft_class():
-
-    def __init__(self, sr=None, fft_type='m, p'):
-        self.sr, self.fft_type = sr, fft_type
-
-    def fw(self, au):
-        z = fft.rfft(au, axis=0, norm='backward')
-        print(f'au.shape = {au.shape}')
-        print(f'z.shape = {z.shape}')
-        if self.fft_type == 'm, p':
-            m, p = np.abs(z), np.angle(z*np.exp(0.5*np.pi*1.0j))
-            return m, p
-        elif self.fft_type == 'm':
-            m = np.abs(z)
-            return m
-        elif self.fft_type == 'z':
-            return z
-        elif self.fft_type == 'z.real, z.imag':
-            return z.real, z.imag
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
-
-    def bw(self, in_tup):
-        if self.fft_type == 'm, p':
-            m, p = in_tup
-            del in_tup
-            p -= 0.5*np.pi
-            z = np.empty(m.shape, dtype=np.complex128)
-            z.real, z.imag = m*np.cos(p), m*np.sin(p)
-        elif self.fft_type == 'z':
-            z = in_tup.copy()
-            del in_tup
-        elif self.fft_type == 'z.real, z.imag':
-            z = np.empty(in_tup[0].shape, dtype=np.complex128)
-            z.real, z.imag = in_tup
-            del in_tup
-        elif self.fft_type == 'm':
-            raise ValueError('fft_type="m" is not supported for ifft because phase is unknown.')
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
-        au_re = fft.irfft(z, axis=0, norm='backward')
-        print(f'au_re.shape = {au_re.shape}')
-        return au_re
-
-    def re(self, au):          
-        if self.fft_type == 'm, p':
-            m, p = self.fw(au)
-            au_re = self.bw((m, p))
-        elif self.fft_type == 'z':
-            z, = self.fw(au)
-            au_re = self.bw(z)
-        elif self.fft_type == 'z.real, z.imag':
-            z_r, z_i = self.fw(au)
-            au_re = self.bw((z_r, z_i))
-        elif self.fft_type == 'm':
-            raise ValueError('fft_type="m" is not supported for ifft because phase is unknown.')
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
-        return au_re 
-
-    def re_compare(self, au, au_re):
-        print('reconstruction comparison:')
-        if self.sr:
-            print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
-        if au.ndim == 2:
-            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
-        elif au.ndim == 1:
-            print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
  
 def get_sinewave(sr, du, f, phase=0, A=0.5, stereo=False, ls=None, ts=None):
     """
