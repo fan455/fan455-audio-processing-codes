@@ -42,16 +42,20 @@ def get_hilbert_af(y, sr, axis=0):
     # This returns (am, fm), the instaneous amplitude and frequency arrays.
     # The length of the fm array is reduced by one.
     ya = signal.hilbert(y, axis=axis)
-    return np.abs(ya), 0.5*sr*np.diff(np.unwrap(np.angle(ya)))/np.pi
-
-def get_hilbert_apf(y, sr, axis=0):
-    # This returns (am, pm, fm), the instaneous amplitude, phase and frequency arrays.
-    # The length of the fm array is reduced by one.
-    ya = signal.hilbert(y, axis=axis)
     am = np.abs(ya)
-    pm = np.unwrap(np.angle(ya))
-    fm = 0.5*sr*np.diff(pm)/np.pi
-    return am, pm, fm
+    if y.ndim == 2:
+        if axis == 1:
+            fm = 0.5*sr*(ya.real[:,:-1]*np.diff(ya.imag,axis=1) - \
+                         ya.imag[:,:-1]*np.diff(ya.real,axis=1)) / \
+                         ((ya.real[:,:-1]**2 + ya.imag[:,:-1]**2)*np.pi)
+        elif axis == 0:
+            fm = 0.5*sr*(ya.real[:-1,:]*np.diff(ya.imag,axis=0) - \
+                         ya.imag[:-1,:]*np.diff(ya.real,axis=0)) / \
+                         ((ya.real[:-1,:]**2 + ya.imag[:-1,:]**2)*np.pi)            
+    elif y.ndim == 1:
+        fm = 0.5*sr*(ya.real[:-1]*np.diff(ya.imag) - ya.imag[:-1]*np.diff(ya.real)) / \
+             ((ya.real[:-1]**2 + ya.imag[:-1]**2)*np.pi)
+    return am, fm
 
 def get_ihilbert(ya):
     return np.real(ya)
@@ -59,10 +63,10 @@ def get_ihilbert(ya):
 def get_ihilbert_ap(am, pm):
     ya = np.empty(am.shape, dtype=np.complex128)
     return am*np.cos(pm)
-"""
-def get_ihilbert_af(am, fm, sr, initial_phase)
-    pm = 
-"""
+
+#def get_ihilbert_af(am, fm, sr, initial_phase):
+    #pm = 
+
 class stft_class():
 
     def __init__(self, sr, T=0.025, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
