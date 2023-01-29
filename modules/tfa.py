@@ -62,10 +62,7 @@ def get_ihilbert(ya):
 
 def get_ihilbert_ap(am, pm):
     ya = np.empty(am.shape, dtype=np.complex128)
-    return am*np.cos(pm)
-
-#def get_ihilbert_af(am, fm, sr, initial_phase):
-    #pm = 
+    return am*np.cos(pm) 
 
 class stft_class():
 
@@ -77,7 +74,7 @@ class stft_class():
         overlap: float (ratio between 0 and 1). Overlap ratio between each two adjacent windows.
         fft_ratio: float (ratio >= 1). The fft ratio relative to T.
         win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
-        fft_type: str ('m', 'm, p', 'z' or 'z.real, z.imag'). Please refer to the illustration of the returns of self.forward(). If fft_type=='m', istft will use the Griffin-Lim algorithm (GLA).
+        fft_type: str ('m', 'm, p', 'z' or 'zr, zi'). Please refer to the illustration of the returns of self.forward(). If fft_type=='m', istft will use the Griffin-Lim algorithm (GLA).
         GLA_n_iter: int. The iteration times for GLA.
         GLA_random_phase_type: str ('mono' or 'stereo'). Whether the starting random phases for GLA are different between 2 stereo channels.
         """
@@ -99,7 +96,7 @@ class stft_class():
         m: if self.fft_type='m'. The magnitudes array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]). PLEASE NOTE that the istft will use phases of a white noise!
         m, p: if self.fft_type='m, p'. The magnitudes array and phases array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]). The phase range is [-pi, pi].
         z: if self.fft_type='z'. The complex array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]).
-        z.real, z.imag: if self.fft_type='z.real, z.imag'. The complex array' real array and imaginary array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]).
+        zr, zi: if self.fft_type='zr, zi'. The complex array' real array and imaginary array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         """
         f, t, z = signal.stft(au, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
         z = z.swapaxes(1, -1)
@@ -112,18 +109,18 @@ class stft_class():
             print(f'm.shape = {m.shape}')
             return f, t, m
         elif self.fft_type == 'm, p':
-            m, p = np.abs(z), np.angle(z*np.exp(0.5*np.pi*1.0j))
+            m, p = np.abs(z), np.unwrap(np.angle(z))
             print(f'm.shape = {m.shape}')
             print(f'p.shape = {p.shape}')
             return f, t, m, p
         elif self.fft_type == 'z':
             return f, t, z
-        elif self.fft_type == 'z.real, z.imag':
+        elif self.fft_type == 'zr, zi':
             return f, t, z.real, z.imag
         else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
 
-    def bw(self, in_tup, nsample=None):
+    def bw(self, m=None, p=None, z=None, zr=None, zi=None, nsample=None):
         """
         Inverse Short-Time Fourier Transform
 
@@ -134,14 +131,13 @@ class stft_class():
         au_re: ndarray. Audio array after inverse short-time fourier transform.
         """
         if self.fft_type == 'm, p':
-            m, p = in_tup
-            del in_tup
-            p -= 0.5*np.pi
+            assert m is not None, f'm is None'
+            assert p is not None, f'p is None'
             z = np.empty(m.shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
         elif self.fft_type == 'm':
-            m = in_tup.copy()
-            del in_tup
+            assert m is not None, f'm is None'
+            assert nsample is not None, f'nsample is None'
             p = self.get_random_phase(nsample, m.ndim)
             z = np.empty(m.shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
@@ -152,14 +148,14 @@ class stft_class():
                 p = np.angle(z)
                 z.real, z.imag = m*np.cos(p), m*np.sin(p)   
         elif self.fft_type == 'z':
-            z = in_tup.copy()
-            del in_tup
-        elif self.fft_type == 'z.real, z.imag':
+            assert z is not None, f'z is None'
+        elif self.fft_type == 'zr, zi':
+            assert zr is not None, f'zr is None'
+            assert zi is not None, f'zi is None'
             z = np.empty(in_tup[0].shape, dtype=np.complex128)
-            z.real, z.imag = in_tup
-            del in_tup
+            z.real, z.imag = zr, zi
         else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
         t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
         print(f'au_re.shape = {au_re.shape}')
         return au_re
@@ -173,21 +169,21 @@ class stft_class():
         """          
         if self.fft_type == 'm, p':
             f, t, m, p = self.fw(au)
-            au_re = self.bw((m, p))
+            au_re = self.bw(m=m, p=p)
         elif self.fft_type == 'm':
             # Using the Griffin-Lim algorithm.
             f, t, m = self.fw(au)
             nsample = au.shape[0]
             print(f'nsample = {nsample}')
-            au_re = self.bw(m, nsample)
+            au_re = self.bw(m=m, nsample=nsample)
         elif self.fft_type == 'z':
             f, t, z = self.fw(au)
-            au_re = self.bw(z)
-        elif self.fft_type == 'z.real, z.imag':
-            f, t, z_r, z_i = self.fw(au)
-            au_re = self.bw((z_r, z_i))
+            au_re = self.bw(z=z)
+        elif self.fft_type == 'zr, zi':
+            f, t, zr, zi = self.fw(au)
+            au_re = self.bw(zr=zr, zi=zi)
         else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "z.real, z.imag".')
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
         return au_re        
 
     def get_random_phase(self, nsample, m_ndim):
