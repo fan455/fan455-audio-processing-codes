@@ -22,7 +22,7 @@ def plot(y, x=None, title='title', xlabel='x', ylabel='y', bgcolor='#D1DDC5', **
     ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
 
-def plot_annotate(y, x=None, title='title', xlabel='x', ylabel='y', bgcolor='#D1DDC5', annotate_x=True, annotate_y=False, **kwargs):
+def plot_xint(y, x=None, title='title', xlabel='x', ylabel='y', bgcolor='#D1DDC5', annotate_x=False):
     """
     x, y: 1d arrays with the same size.
     """
@@ -33,16 +33,10 @@ def plot_annotate(y, x=None, title='title', xlabel='x', ylabel='y', bgcolor='#D1
         x = np.arange(y.size)
     else:
         assert x.dtype == int
-    ax.plot(x, y, **kwargs)
-    if annotate_x and not annotate_y:
+    ax.plot(x, y, color='tab:grey', linestyle='--', marker='.', markersize=12.0, mec='black', mfc='black')
+    if annotate_x:
         for i in range(x.size):
-            plt.annotate(f'{x[i]}', (x[i], y[i]))
-    elif annotate_y and not annotate_x:
-        for i in range(y.size):
-            plt.annotate(f'{y[i]}', (x[i], y[i]))
-    elif annotate_x and annotate_y:
-        for i in range(x.size):
-            plt.annotate(f'{(x[i], y[i])}', (x[i], y[i]))
+            plt.annotate(f'{x[i]}', (x[i], y[i]), fontsize='small')
     else:
         pass
     plt.title(title)
