@@ -31,7 +31,7 @@ def abs2(x):
     #return np.square(x.real) + np.square(x.imag)
     return x.real**2 + x.imag**2 # This line seems faster than the above line.
 
-def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1, beta=1e-2, return_type='modes'):
+def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1, beta=1e-2, return_type='modes, residual'):
     """
     Parameters:
     y: 1d real array. The input signal array, need to be 1d, real, and better within range [-1, 1].
@@ -101,14 +101,14 @@ def svmd(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1,
     print('The last element of output is deleted because input size is even.', '\n')
     end_time = timeit.default_timer()
     print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.')
-    if return_type == 'modes':
-        return Modes
-    elif return_type == 'modes, residual':
+    if return_type == 'modes, residual':
         return Modes[:-1, :], Modes[-1, :]
+    elif return_type == 'modes':
+        return Modes
     else:
         raise ValueError(f'return_type "{return_type}" is not supported.')
 
-def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1, beta=1e-2, merge_range=1.5, return_type='modes'):
+def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alpha=1, beta=1e-2, merge_range=1.5, return_type='modes, residual'):
     """
     SVMD including a refinement process to determine the mode number and merge modes with close center frequencies.
     You will be prompted a input requirement to determine the mode number after you have analyzed the normalized distances between modes.
@@ -203,9 +203,9 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
     
     end_time = timeit.default_timer()
     print(f'SVMD completed, running time: {round((end_time-start_time), 4)} seconds.')
-    if return_type == 'modes':
-        return Modes
-    elif return_type == 'modes, residual':
+    if return_type == 'modes, residual':
         return Modes[:-1, :], Modes[-1, :]
+    elif return_type == 'modes':
+        return Modes
     else:
         raise ValueError(f'return_type "{return_type}" is not supported.')
