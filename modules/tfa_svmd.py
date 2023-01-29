@@ -180,8 +180,8 @@ def svmd_refined(y, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, 
     Distances = np.array(Distances)
     print('Please type input after closing this figure:')
     print(f'(Tip: Choose the mode number after which the distance sharply drops closer to zero.)')
-    plot(Distances, np.arange(2, k+1), title='determine mode number', x_label='mode number', \
-         y_label='minimum normalized distance', color='tab:grey', linestyle='--', \
+    plot(Distances, np.arange(2, k+1), title='determine mode number', xlabel='mode number', \
+         ylabel='minimum normalized distance', color='tab:grey', linestyle='--', \
          marker='.', markersize=12.0, mec='black', mfc='black')
     nMode = int(input(f'Number of modes (should <= {k}): '))
     assert nMode <= k, f'nMode > {k}'
