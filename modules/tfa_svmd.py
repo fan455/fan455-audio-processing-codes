@@ -179,8 +179,7 @@ def svmd_refined(y, sr, nmode, merge_range=1.5, out_thr=1e-5, in_thr=1e-10, out_
     Fc_main = np.broadcast_to(Fc[:nmode].reshape((nmode,1)), (nmode, k-nmode))
     Fc_other = np.broadcast_to(Fc[nmode:].reshape((1, k-nmode)), (nmode, k-nmode))
     Merge = np.argmin(np.abs(Fc_main-Fc_other), axis=0)
-    Merge = np.where((Fc[nmode:] < Fc[Merge]/merge_range)&\
-                     (Fc[nmode:] > Fc[Merge]*merge_range), k, Merge)
+    Merge[(Fc[nmode:] < Fc[Merge]/merge_range)|(Fc[nmode:] > Fc[Merge]*merge_range)] = k
     for i in range(nmode, k):
         merge = Merge[i-nmode]
         Modes[merge] += Modes[i]
