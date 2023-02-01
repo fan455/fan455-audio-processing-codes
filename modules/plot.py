@@ -80,85 +80,60 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, xlab
     plt.ylabel(ylabel, loc='center')
     plt.show()    
                 
-def plot_modes(Modes, au, t, compare_with_noise=True, title=None, xlabel='time', ylabel='magnitude', grid=False, bgcolor='#D1DDC5', **kwargs):
+def plot_modes(Modes, t, au=None, res=None, compare_with_noise=True, title=None, xlabel='time', ylabel='magnitude', grid=False, bgcolor='#D1DDC5', **kwargs):
+    assert Modes.shape[1] == t.size
     assert Modes.shape[0] < Modes.shape[1]
-    assert Modes.shape[1] == au.size
-    N = Modes.shape[0]    
-
+    N = Modes.shape[0]
+    nrows = N
+    if au is not None:
+        assert au.size == t.size
+        nrows += 1
+    if res is not None:
+        assert res.size == t.size
+        nrows += 1
     if compare_with_noise:
-        fig, ax = plt.subplots(N+2, 1, facecolor=bgcolor)
-        noise = 0.1*np.random.normal(size=au.size)
+        nrows += 1
+
+    fig, ax = plt.subplots(nrows=nrows, ncols=1, facecolor=bgcolor)
+    
+    nadj = 0
+    if au is not None:
+        ax[0].set_title('original signal', fontsize='medium')
+        ax[0].set_facecolor(bgcolor)
+        ax[0].plot(t, au, color='green', **kwargs)
+        nadj += 1
+        
+    for i in range(0, N):
+        ax[i+nadj].set_title(f'mode {i+1}', fontsize='medium')     
+        ax[i+nadj].set_facecolor(bgcolor)
+        ax[i+nadj].plot(t, Modes[i, :], **kwargs)
+
+    if res is not None:  
+        ax[N+nadj].set_title('residual', fontsize='medium')
+        ax[N+nadj].set_facecolor(bgcolor)
+        ax[N+nadj].plot(t, res, **kwargs)
+        nadj += 1
+    else:
+        ax[N-1+nadj].set_title('residual', fontsize='medium')
+    
+    if compare_with_noise:
+        noise = 0.1*np.random.normal(size=t.size)
         noise[noise>0.3] = 0.3
         noise[noise<-0.3] = -0.3
         noise[0] = -0.5
         noise[-1] = 0.5
-        ax[N+1].set_title('compare with Gaussian noise', fontsize='medium')
-        ax[N+1].set_facecolor(bgcolor)
-        ax[N+1].plot(t, noise, color='gray', **kwargs) 
-    else:
-        fig, ax = plt.subplots(N+1, 1)
-  
-    ax[0].set_title('original signal', fontsize='medium')
-    ax[0].set_facecolor(bgcolor)
-    ax[0].plot(t, au, color='green', **kwargs)
-    
-    for i in range(1, N):
-        ax[i].set_title(f'mode {i}', fontsize='medium')     
-        ax[i].set_facecolor(bgcolor)
-        ax[i].plot(t, Modes[i-1, :], **kwargs)
-
-    ax[N].set_title('residual', fontsize='medium')
-    ax[N].set_facecolor(bgcolor)
-    ax[N].plot(t, Modes[N-1, :], **kwargs)
+        ax[N+nadj].set_title('compare with Gaussian noise', fontsize='medium')
+        ax[N+nadj].set_facecolor(bgcolor)
+        ax[N+nadj].plot(t, noise, color='gray', **kwargs) 
     
     if grid:
-        for i in range(N+2):
+        for i in range(nrows):
             ax[i].grid(color='grey', linewidth='1', linestyle='-.')
     if title:
         fig.suptitle(title)
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
     plt.show()
-
-def plot_modes_residual(Modes, res, au, t, compare_with_noise=True, title=None, xlabel='time', ylabel='magnitude', grid=False, bgcolor='#D1DDC5', **kwargs):
-    assert Modes.shape[0] < Modes.shape[1]
-    assert Modes.shape[1] == res.size == au.size
-    N = Modes.shape[0]   
-
-    if compare_with_noise:
-        fig, ax = plt.subplots(N+3, 1, facecolor=bgcolor)
-        noise = 0.1*np.random.normal(size=au.size)
-        noise[noise>0.3] = 0.3
-        noise[noise<-0.3] = -0.3
-        noise[0] = -0.5
-        noise[-1] = 0.5
-        ax[N+2].set_title('compare with Gaussian noise', fontsize='medium')
-        ax[N+2].set_facecolor(bgcolor)
-        ax[N+2].plot(t, noise, color='gray', **kwargs) 
-    else:
-        fig, ax = plt.subplots(N+1, 1)
-  
-    ax[0].set_title('original signal', fontsize='medium')
-    ax[0].set_facecolor(bgcolor)
-    ax[0].plot(t, au, color='green', **kwargs)
-    
-    for i in range(1, N+1):
-        ax[i].set_title(f'mode {i}', fontsize='medium')     
-        ax[i].set_facecolor(bgcolor)
-        ax[i].plot(t, Modes[i-1, :], **kwargs)
-
-    ax[N+1].set_title('residual', fontsize='medium')
-    ax[N+1].set_facecolor(bgcolor)
-    ax[N+1].plot(t, res, **kwargs)
-    
-    if grid:
-        for i in range(N+3):
-            ax[i].grid(color='grey', linewidth='1', linestyle='-.')
-    if title:
-        fig.suptitle(title)
-    plt.xlabel(xlabel, loc='right')
-    plt.ylabel(ylabel, loc='center')
-    plt.show()  
 
 def plot_au_mono(au, sr, title='title', grid=True, bgcolor='#D1DDC5'):
     """
