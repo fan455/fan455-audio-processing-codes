@@ -35,7 +35,7 @@ def re_compare(au, au_re, sr):
     elif au.ndim == 1:
         print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
 
-class mLUFS_meter():
+class mlufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
     def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0):
         """
@@ -142,7 +142,7 @@ class mLUFS_meter():
         # Normalize the maxinum momentary lufs.
         return au*db2amp(target - self.get_max(au, cut_start=cut_start))
     
-class iLUFS_meter():
+class ilufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
     def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0):
         """
