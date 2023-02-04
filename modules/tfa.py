@@ -22,7 +22,7 @@ def get_iirsos(y, sos, axis=0):
         sos = sos.reshape((1, 6))
     return signal.sosfilt(sos, y, axis=axis)
 
-# Equalizer
+# 1-sos equalizer
 def get_eq_sos(sr, f0, dBgain, Q, eq_type):
     # get the sos parameters for eq.
     w0 = 2*np.pi*f0/sr
@@ -87,12 +87,21 @@ def get_eq_fr(sr, f0, dBgain, Q, eq_type):
     f, z = signal.sosfreqz(sos, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
 
+def get_eq_fr_inputsos(sr, sos):
+    sos = sos.reshape((1, 6))
+    f, z = signal.sosfreqz(sos, fs=sr)
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
+
 def get_eq(y, sr, f0, dBgain, Q, eq_type, axis=0):
     sos = get_eq_sos(sr, f0, dBgain, Q, eq_type)
     sos = sos.reshape((1, 6))
     return signal.sosfilt(sos, y, axis=axis)
 
-def get_eqsos_sos(sr, f0: list, dBgain: list, Q: list, eq_type: list):
+def get_eq_inputsos(y, sos, axis=0):
+    return signal.sosfilt(sos, y, axis=axis)
+
+# n-sos equalizer
+def get_eqn_sos(sr, f0: list, dBgain: list, Q: list, eq_type: list):
     # get the sos parameters for sos eq (i.e. more than 2 sos).
     assert 1 < len(f0) == len(dBgain) == len(Q) == len(eq_type)
     nsos = len(f0)
@@ -103,13 +112,20 @@ def get_eqsos_sos(sr, f0: list, dBgain: list, Q: list, eq_type: list):
         sos.append(sos_)
     return np.array(sos)
 
-def get_eqsos_fr(sr, f0: list, dBgain: list, Q: list, eq_type: list):
-    sos = get_eqsos_sos(sr, f0, dBgain, Q, eq_type)
+def get_eqn_fr(sr, f0: list, dBgain: list, Q: list, eq_type: list):
+    sos = get_eqn_sos(sr, f0, dBgain, Q, eq_type)
     f, z = signal.sosfreqz(sos, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
 
-def get_eqsos(y, sr, f0: list, dBgain: list, Q: list, eq_type: list, axis=0):
-    sos = get_eqsos_sos(sr, f0, dBgain, Q, eq_type)
+def get_eqn_fr_inputsos(sr, sos):
+    f, z = signal.sosfreqz(sos, fs=sr)
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
+
+def get_eqn(y, sr, f0: list, dBgain: list, Q: list, eq_type: list, axis=0):
+    sos = get_eqn_sos(sr, f0, dBgain, Q, eq_type)
+    return signal.sosfilt(sos, y, axis=axis)
+
+def get_eqn_inputsos(y, sos, axis=0):
     return signal.sosfilt(sos, y, axis=axis)
         
 # Time-frequency transform
