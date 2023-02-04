@@ -55,22 +55,20 @@ def get_eq_sos(sr, f0, dBgain, Q, eq_type):
         b0 = A*((A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha)
         b1 = 2*A*((A-1) - (A+1)*cosw0)
         b2 = A*((A+1) - (A-1)*cosw0 - 2*np.sqrt(A)*alpha)
-        a0 = 1.0
         a1 = -2*((A-1) + (A+1)*cosw0)
         a2 = (A+1) + (A-1)*cosw0 - 2*np.sqrt(A)*alpha
         b = A*np.array([b0, b1, b2])/a0_
-        a = A*np.array([a0, a1/a0_, a2/a0_])
+        a = A*np.array([1.0, a1/a0_, a2/a0_])
     elif eq_type == 'low shelf':
-        a0_ = (A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha
         A = np.power(10, dBgain/40)
+        a0_ = (A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha
         b0 = A*((A+1) + (A-1)*cosw0 + 2*np.sqrt(A)*alpha)
         b1 = -2*A*((A-1) + (A+1)*cosw0)
         b2 = A*((A+1) + (A-1)*cosw0 - 2*np.sqrt(A)*alpha)
-        a0 = 1.0
         a1 = 2*((A-1) - (A+1)*cosw0)
         a2 = (A+1) - (A-1)*cosw0 - 2*np.sqrt(A)*alpha
         b = A*np.array([b0, b1, b2])/a0_
-        a = A*np.array([a0, a1/a0_, a2/a0_])
+        a = A*np.array([1.0, a1/a0_, a2/a0_])
     elif eq_type == 'notch':
         a0_ = 1+alpha
         b = np.array([1.0, -2*cosw0, 1.0])/a0_
