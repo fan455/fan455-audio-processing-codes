@@ -114,6 +114,12 @@ def get_rfftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.rfft(y, axis=axis, norm='backward'))
 
+def get_rfftmf(y, sr, axis=-1):
+    # This returns frequency magnitudes and the frequencies consistent with sr.
+    y_rfftm = np.abs(fft.rfft(y, axis=axis, norm='backward'))
+    f = np.arange(y_rfft.size)*sr/y.size
+    return y_rfftm, f
+
 def get_fft(y, axis=-1):
     return fft.fft(y, axis=axis, norm='backward')
 
