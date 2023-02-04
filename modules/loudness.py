@@ -51,16 +51,16 @@ class mlufs_meter():
         self.step, self.hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         if self.sr == 48000:
             # coefficients in the ITU documentation.
-            b0_1, b1_1, b2_1 = 1.53512485958697, -2.69169618940638, 1.19839281085285
-            a0_1, a1_1, a2_1 = 1.0 , -1.69065929318241, 0.73248077421585
-            b0_2, b1_2, b2_2 = 1.0, -2.0, 1.0
-            a0_2, a1_2, a2_2 = 1.0, -1.99004745483398, 0.99007225036621
+            self.b_1 = np.array([1.53512485958697, -2.69169618940638, 1.19839281085285])
+            self.a_1 = np.array([1.0 , -1.69065929318241, 0.73248077421585])
+            self.b_2 = np.array([1.0, -2.0, 1.0])
+            self.a_2 = np.array([1.0, -1.99004745483398, 0.99007225036621])
         elif self.sr == 44100:
             # coefficients calculation by BrechtDeMan, super close to the ITU documentation.
-            b0_1, b1_1, b2_1 = 1.5308412300498355, -2.6509799951536985, 1.1690790799210682
-            a0_1, a1_1, a2_1 = 1.0, -1.6636551132560204, 0.7125954280732254
-            b0_2, b1_2, b2_2 = 1.0, -2.0, 1.0
-            a0_2, a1_2, a2_2 = 1.0, -1.9891696736297957, 0.9891990357870394
+            self.b_1 = np.array([1.5308412300498355, -2.6509799951536985, 1.1690790799210682])
+            self.a_1 = np.array([1.0, -1.6636551132560204, 0.7125954280732254])
+            self.b_2 = np.array([1.0, -2.0, 1.0])
+            self.a_2 = np.array([1.0, -1.9891696736297957, 0.9891990357870394])
         else:
             # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
             # pre-filter 1
@@ -87,12 +87,15 @@ class mlufs_meter():
             b0_2 = 1.0
             b1_2 = -2.0
             b2_2 = 1.0
-            
-        self.sos = np.array([[b0_1, b1_1, b2_1, a0_1, a1_1, a2_1], \
-                            [b0_2, b1_2, b2_2, a0_2, a1_2, a2_2]])
+
+        self.b_1 = np.array([b0_1, b1_1, b2_1])
+        self.a_1 = np.array([a0_1, a1_1, a2_1])
+        self.b_2 = np.array([b0_2, b1_2, b2_2])
+        self.a_2 = np.array([a0_2, a1_2, a2_2])
             
     def prefilter(self, au):
-        au = signal.sosfilt(self.sos, au, axis=0)
+        au = signal.lfilter(self.b_1, self.a_1, au, axis=0)
+        au = signal.lfilter(self.b_2, self.a_2, au, axis=0)
         return au
 
     def pad_zeros(self, au):
@@ -185,16 +188,16 @@ class ilufs_meter():
         self.step, self.hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         if self.sr == 48000:
             # coefficients in the ITU documentation.
-            b0_1, b1_1, b2_1 = 1.53512485958697, -2.69169618940638, 1.19839281085285
-            a0_1, a1_1, a2_1 = 1.0 , -1.69065929318241, 0.73248077421585
-            b0_2, b1_2, b2_2 = 1.0, -2.0, 1.0
-            a0_2, a1_2, a2_2 = 1.0, -1.99004745483398, 0.99007225036621
+            self.b_1 = np.array([1.53512485958697, -2.69169618940638, 1.19839281085285])
+            self.a_1 = np.array([1.0 , -1.69065929318241, 0.73248077421585])
+            self.b_2 = np.array([1.0, -2.0, 1.0])
+            self.a_2 = np.array([1.0, -1.99004745483398, 0.99007225036621])
         elif self.sr == 44100:
             # coefficients calculation by BrechtDeMan, super close to the ITU documentation.
-            b0_1, b1_1, b2_1 = 1.5308412300498355, -2.6509799951536985, 1.1690790799210682
-            a0_1, a1_1, a2_1 = 1.0, -1.6636551132560204, 0.7125954280732254
-            b0_2, b1_2, b2_2 = 1.0, -2.0, 1.0
-            a0_2, a1_2, a2_2 = 1.0, -1.9891696736297957, 0.9891990357870394
+            self.b_1 = np.array([1.5308412300498355, -2.6509799951536985, 1.1690790799210682])
+            self.a_1 = np.array([1.0, -1.6636551132560204, 0.7125954280732254])
+            self.b_2 = np.array([1.0, -2.0, 1.0])
+            self.a_2 = np.array([1.0, -1.9891696736297957, 0.9891990357870394])
         else:
             # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
             # pre-filter 1
@@ -221,12 +224,15 @@ class ilufs_meter():
             b0_2 = 1.0
             b1_2 = -2.0
             b2_2 = 1.0
-            
-        self.sos = np.array([[b0_1, b1_1, b2_1, a0_1, a1_1, a2_1], \
-                            [b0_2, b1_2, b2_2, a0_2, a1_2, a2_2]])
+
+        self.b_1 = np.array([b0_1, b1_1, b2_1])
+        self.a_1 = np.array([a0_1, a1_1, a2_1])
+        self.b_2 = np.array([b0_2, b1_2, b2_2])
+        self.a_2 = np.array([a0_2, a1_2, a2_2])
             
     def prefilter(self, au):
-        au = signal.sosfilt(self.sos, au, axis=0)
+        au = signal.lfilter(self.b_1, self.a_1, au, axis=0)
+        au = signal.lfilter(self.b_2, self.a_2, au, axis=0)
         return au
 
     def pad_zeros(self, au):
