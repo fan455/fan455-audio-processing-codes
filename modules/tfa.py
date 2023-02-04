@@ -29,47 +29,56 @@ def get_eq_sos(sr, f0, dBgain, Q, eq_type):
     cosw0, sinw0 = np.cos(w0), np.sin(w0)
     alpha = 0.5*sinw0/Q
     if eq_type == 'low pass':
-        b = np.array([0.5*(1-cosw0), 1-cosw0, 0.5*(1-cosw0)])
-        a = np.array([1+alpha, -2*cosw0, 1-alpha])
-    elif eq_type == 'high pass':   
-        b = np.array([0.5*(1+cosw0), -1-cosw0, 0.5*(1+cosw0)])
-        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+        a0_ = 1+alpha
+        b = np.array([0.5*(1-cosw0), 1-cosw0, 0.5*(1-cosw0)])/a0_
+        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
+    elif eq_type == 'high pass':
+        a0_ = 1+alpha
+        b = np.array([0.5*(1+cosw0), -1-cosw0, 0.5*(1+cosw0)])/a0_
+        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
     elif eq_type == 'peak':
         A = np.power(10, dBgain/40)
-        b = np.array([1+alpha*A, -2*cosw0, 1-alpha*A])
-        a = np.array([1+alpha/A, -2*cosw0, 1-alpha/A])
-    elif eq_type == 'band pass':    
-        b = np.array([alpha, 0.0, -alpha])
-        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+        a0_ = 1+alpha/A
+        b = np.array([1+alpha*A, -2*cosw0, 1-alpha*A])/a0_
+        a = np.array([1.0, -2*cosw0/a0_, (1-alpha/A)/a0_])
+    elif eq_type == 'band pass':
+        a0_ = 1+alpha
+        b = np.array([alpha, 0.0, -alpha])/a0_
+        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
     elif eq_type == 'band pass QdB':
-        b = np.array([Q*alpha, 0.0, -Q*alpha])
-        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+        a0_ = 1+alpha
+        b = np.array([Q*alpha, 0.0, -Q*alpha])/a0_
+        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
     elif eq_type == 'low shelf':
         A = np.power(10, dBgain/40)
+        a0_ = (A+1) + (A-1)*cosw0 + 2*np.sqrt(A)*alpha
         b0 = A*((A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha)
         b1 = 2*A*((A-1) - (A+1)*cosw0)
         b2 = A*((A+1) - (A-1)*cosw0 - 2*np.sqrt(A)*alpha)
-        a0 = (A+1) + (A-1)*cosw0 + 2*np.sqrt(A)*alpha
+        a0 = 1.0
         a1 = -2*((A-1) + (A+1)*cosw0)
         a2 = (A+1) + (A-1)*cosw0 - 2*np.sqrt(A)*alpha
-        b = A*np.array([b0, b1, b2])
-        a = A*np.array([a0, a1, a2])
+        b = A*np.array([b0, b1, b2])/a0_
+        a = A*np.array([a0, a1/a0_, a2/a0_])
     elif eq_type == 'low shelf':
+        a0_ = (A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha
         A = np.power(10, dBgain/40)
         b0 = A*((A+1) + (A-1)*cosw0 + 2*np.sqrt(A)*alpha)
         b1 = -2*A*((A-1) + (A+1)*cosw0)
         b2 = A*((A+1) + (A-1)*cosw0 - 2*np.sqrt(A)*alpha)
-        a0 = (A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha
+        a0 = 1.0
         a1 = 2*((A-1) - (A+1)*cosw0)
         a2 = (A+1) - (A-1)*cosw0 - 2*np.sqrt(A)*alpha
-        b = A*np.array([b0, b1, b2])
-        a = A*np.array([a0, a1, a2])
+        b = A*np.array([b0, b1, b2])/a0_
+        a = A*np.array([a0, a1/a0_, a2/a0_])
     elif eq_type == 'notch':
-        b = np.array([1.0, -2*cosw0, 1.0])
-        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+        a0_ = 1+alpha
+        b = np.array([1.0, -2*cosw0, 1.0])/a0_
+        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
     elif eq_type == 'all pass':
-        b = np.array([1-alpha, -2*cosw0, 1+alpha])
-        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+        a0_ = 1+alpha
+        b = np.array([1-alpha, -2*cosw0, 1+alpha])/a0_
+        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
     else:
         raise ValueError(f'eq_type "{eq_type}" is not supported.')
     return np.append(b, a)
@@ -117,8 +126,8 @@ def get_rfftm(y, axis=-1):
 def get_rfftmf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
     y_rfftm = np.abs(fft.rfft(y, axis=axis, norm='backward'))
-    f = np.arange(y_rfftm.size)*sr/y.size
-    return y_rfftm, f
+    y_rfftf = np.arange(y_rfftm.size)*sr/y.size
+    return y_rfftm, y_rfftf
 
 def get_fft(y, axis=-1):
     return fft.fft(y, axis=axis, norm='backward')
