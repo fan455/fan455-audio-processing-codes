@@ -48,6 +48,7 @@ class mlufs_meter():
         """
         self.sr, self.T, self.overlap, self.threshold = sr, T, overlap, threshold
         self.z_threshold = np.power(10, (self.threshold+0.691)/10)
+        self.step, self.hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         if self.sr == 48000:
             # coefficients in the ITU documentation.
             b0_1, b1_1, b2_1 = 1.53512485958697, -2.69169618940638, 1.19839281085285
@@ -94,19 +95,41 @@ class mlufs_meter():
         au = signal.sosfilt(self.sos, au, axis=0)
         return au
 
+    def pad_zeros(self, au):
+        # Since the output of mlufs will be affected by zeros padding, this is for comparison purpose.
+        if au.ndim == 2:
+            nchannel = au.shape[-1]
+            q1, q2 = divmod(au.shape[0], self.hop)
+            q3 = self.step - self.hop - q2
+            if q3 > 0:
+                au = np.append(au, np.zeros((q3, nchannel)), axis=0)
+                print(f'{round(q3/self.sr, 4)} seconds of silence padded at the end of audio.')
+            else:
+                print('no padding')
+        elif au.ndim == 1:
+            q1, q2 = divmod(au.shape[0], self.hop)
+            q3 = self.step - self.hop - q2
+            if q3 > 0:
+                au = np.append(au, np.zeros(q3), axis=0)
+                print(f'{round(q3/self.sr, 4)} seconds of silence padded at the end of audio.')
+            else:
+                print('no padding')
+        else:
+            raise ValueError(f'au.ndim = {au.ndim} is not supported.')
+        return au
+    
     def get(self, au, cut_start=None):
         # Get the full Mlufs array corresponding to the windowed audio. The audio array will be padded zeros at the end to complete the last window.
-        step, hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         Mlufs = np.empty(0)
         if au.ndim == 2:
             if cut_start:
                 au = au[0: int(self.sr*cut_start), :]
-            q1, q2 = divmod(au.shape[0], hop)
-            q3 = step - hop - q2
+            q1, q2 = divmod(au.shape[0], self.hop)
+            q3 = self.step - self.hop - q2
             if q3 > 0:
                 au = np.append(au, np.zeros((q3, au.shape[-1])), axis=0)
             for i in range(0, q1):
-                au_f = au[i*hop: i*hop+step, :]
+                au_f = au[i*self.hop: i*self.hop+self.step, :]
                 au_f = self.prefilter(au_f)
                 z = np.sum(np.average(np.square(au_f), axis=0))
                 if z < self.z_threshold:
@@ -117,12 +140,12 @@ class mlufs_meter():
         elif au.ndim == 1:
             if cut_start:
                 au = au[0: int(self.sr*cut_start)]
-            q1, q2 = divmod(au.shape[0], hop)
-            q3 = step - hop - q2
+            q1, q2 = divmod(au.shape[0], self.hop)
+            q3 = self.step - self.hop - q2
             if q3 > 0:
                 au = np.append(au, np.zeros(q3), axis=0)
             for i in range(0, q1):
-                au_f = au[i*hop: i*hop+step]
+                au_f = au[i*self.hop: i*self.hop+self.step]
                 au_f = self.prefilter(au_f)
                 z = np.average(np.square(au_f))
                 if z < self.z_threshold:
@@ -137,6 +160,11 @@ class mlufs_meter():
     def get_max(self, au, cut_start=None):
         # Get the maxinum momentary lufs.
         return np.amax(self.get(au, cut_start=cut_start))
+
+    def display_max(self, au, cut_start=None):
+        # print the maxinum momentary lufs.
+        mlufs_max = np.amax(self.get(au, cut_start=cut_start))
+        print(f'mlufs_max = {round(mlufs_max, 4)} LUFS')
 
     def norm(self, au, target=-20.0, cut_start=None):
         # Normalize the maxinum momentary lufs.
@@ -154,6 +182,7 @@ class ilufs_meter():
         """
         self.sr, self.T, self.overlap, self.threshold = sr, T, overlap, threshold
         self.z_threshold = np.power(10, (self.threshold+0.691)/10)
+        self.step, self.hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         if self.sr == 48000:
             # coefficients in the ITU documentation.
             b0_1, b1_1, b2_1 = 1.53512485958697, -2.69169618940638, 1.19839281085285
@@ -200,20 +229,42 @@ class ilufs_meter():
         au = signal.sosfilt(self.sos, au, axis=0)
         return au
 
+    def pad_zeros(self, au):
+        # Since the output of ilufs will be affected by zeros padding, this is for comparison purpose.
+        if au.ndim == 2:
+            nchannel = au.shape[-1]
+            q1, q2 = divmod(au.shape[0], self.hop)
+            q3 = self.step - self.hop - q2
+            if q3 > 0:
+                au = np.append(au, np.zeros((q3, nchannel)), axis=0)
+                print(f'{round(q3/self.sr, 4)} seconds of silence padded at the end of audio.')
+            else:
+                print('no padding')
+        elif au.ndim == 1:
+            q1, q2 = divmod(au.shape[0], self.hop)
+            q3 = self.step - self.hop - q2
+            if q3 > 0:
+                au = np.append(au, np.zeros(q3), axis=0)
+                print(f'{round(q3/self.sr, 4)} seconds of silence padded at the end of audio.')
+            else:
+                print('no padding')
+        else:
+            raise ValueError(f'au.ndim = {au.ndim} is not supported.')
+        return au
+
     def get(self, au, cut_start=None):
         # Get the integrated lufs of a mono or stereo audio input. The audio array will be padded zeros at the end to complete the last window.
-        step, hop = int(self.sr*self.T), int(self.sr*self.T*(1-self.overlap))
         Mlufs, Z = np.empty(0), np.empty(0)
         if au.ndim == 2:
             if cut_start:
                 au = au[0: int(self.sr*cut_start), :]
             nchannel = au.shape[-1]
-            q1, q2 = divmod(au.shape[0], hop)
-            q3 = step - hop - q2
+            q1, q2 = divmod(au.shape[0], self.hop)
+            q3 = self.step - self.hop - q2
             if q3 > 0:
                 au = np.append(au, np.zeros((q3, nchannel)), axis=0)       
             for i in range(0, q1):
-                au_f = au[i*hop: i*hop+step, :]
+                au_f = au[i*self.hop: i*self.hop+self.step, :]
                 au_f = self.prefilter(au_f)
                 z = np.sum(np.average(np.square(au_f), axis=0))
                 if z < self.z_threshold:
@@ -224,12 +275,12 @@ class ilufs_meter():
         elif au.ndim == 1:
             if cut_start:
                 au = au[0: int(self.sr*cut_start)]
-            q1, q2 = divmod(au.shape[0], hop)
-            q3 = step - hop - q2
+            q1, q2 = divmod(au.shape[0], self.hop)
+            q3 = self.step - self.hop - q2
             if q3 > 0:
                 au = np.append(au, np.zeros(q3), axis=0)
             for i in range(0, q1):
-                au_f = au[i*hop: i*hop+step]
+                au_f = au[i*self.hop: i*self.hop+self.step]
                 au_f = self.prefilter(au_f)
                 z = np.average(np.square(au_f), axis=0)
                 if z < self.z_threshold:
@@ -241,7 +292,7 @@ class ilufs_meter():
             raise ValueError(f'au.ndim = {au.ndim} is not supported.')
         Z0 = Z[Mlufs > -70.0]
         if Z0.size == 0:
-            Ilufs = float('-inf')
+            ilufs = float('-inf')
         else:
             z1 = np.average(Z0)
             if z1 >= self.z_threshold:
@@ -249,14 +300,19 @@ class ilufs_meter():
             else:
                 pass 
         if Z.size == 0:
-            Ilufs = float('-inf')
+            ilufs = float('-inf')
         else:
             z2 = np.average(Z)
             if z2 >= self.z_threshold:
-                Ilufs = -0.691 + 10*np.log10(z2)
+                ilufs = -0.691 + 10*np.log10(z2)
             else:
-                Ilufs = float('-inf')
-        return Ilufs
+                ilufs = float('-inf')
+        return ilufs
+
+    def display(self, au, cut_start=None):
+        # print the maxinum momentary lufs.
+        ilufs = self.get(au, cut_start=cut_start)
+        print(f'ilufs = {round(ilufs, 4)} LUFS')
 
     def norm(self, au, target=-23.0, cut_start=None):
         return au*db2amp(target - self.get(au, cut_start=cut_start))
