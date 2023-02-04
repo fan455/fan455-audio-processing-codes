@@ -4,47 +4,149 @@ Audio Time-Frequency Analysis
 import numpy as np
 from scipy import fft, signal
 
-def get_fftm(y, axis=0):
+# IIR Filter
+def get_iir_fr(b, a, sr, nf=None):
+    # get the frequency response of a digital iir filter
+    f, z = signal.freqz(b, a, fs=sr)
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
+
+def get_iirsos_fr(sos, sr, nf=None):
+    # get the frequency response of a digital sos iir filter
+    if sos.ndim == 1:
+        sos = sos.reshape((1, 6))
+    f, z = signal.sosfreqz(sos, fs=sr)
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
+
+def get_iirsos(y, sos, axis=0):
+    if sos.ndim == 1:
+        sos = sos.reshape((1, 6))
+    return signal.sosfilt(sos, y, axis=axis)
+
+# Equalizer
+def get_eq_sos(sr, f0, dBgain, Q, eq_type):
+    # get the sos parameters for eq.
+    w0 = 2*np.pi*f0/sr
+    cosw0, sinw0 = np.cos(w0), np.sin(w0)
+    alpha = 0.5*sinw0/Q
+    if eq_type == 'low pass':
+        b = np.array([0.5*(1-cosw0), 1-cosw0, 0.5*(1-cosw0)])
+        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+    elif eq_type == 'high pass':   
+        b = np.array([0.5*(1+cosw0), -1-cosw0, 0.5*(1+cosw0)])
+        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+    elif eq_type == 'peak':
+        A = np.power(10, dBgain/40)
+        b = np.array([1+alpha*A, -2*cosw0, 1-alpha*A])
+        a = np.array([1+alpha/A, -2*cosw0, 1-alpha/A])
+    elif eq_type == 'band pass':    
+        b = np.array([alpha, 0.0, -alpha])
+        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+    elif eq_type == 'band pass QdB':
+        b = np.array([Q*alpha, 0.0, -Q*alpha])
+        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+    elif eq_type == 'low shelf':
+        A = np.power(10, dBgain/40)
+        b0 = A*((A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha)
+        b1 = 2*A*((A-1) - (A+1)*cosw0)
+        b2 = A*((A+1) - (A-1)*cosw0 - 2*np.sqrt(A)*alpha)
+        a0 = (A+1) + (A-1)*cosw0 + 2*np.sqrt(A)*alpha
+        a1 = -2*((A-1) + (A+1)*cosw0)
+        a2 = (A+1) + (A-1)*cosw0 - 2*np.sqrt(A)*alpha
+        b = A*np.array([b0, b1, b2])
+        a = A*np.array([a0, a1, a2])
+    elif eq_type == 'low shelf':
+        A = np.power(10, dBgain/40)
+        b0 = A*((A+1) + (A-1)*cosw0 + 2*np.sqrt(A)*alpha)
+        b1 = -2*A*((A-1) + (A+1)*cosw0)
+        b2 = A*((A+1) + (A-1)*cosw0 - 2*np.sqrt(A)*alpha)
+        a0 = (A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha
+        a1 = 2*((A-1) - (A+1)*cosw0)
+        a2 = (A+1) - (A-1)*cosw0 - 2*np.sqrt(A)*alpha
+        b = A*np.array([b0, b1, b2])
+        a = A*np.array([a0, a1, a2])
+    elif eq_type == 'notch':
+        b = np.array([1.0, -2*cosw0, 1.0])
+        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+    elif eq_type == 'all pass':
+        b = np.array([1-alpha, -2*cosw0, 1+alpha])
+        a = np.array([1+alpha, -2*cosw0, 1-alpha])
+    else:
+        raise ValueError(f'eq_type "{eq_type}" is not supported.')
+    return np.append(b, a)
+
+def get_eq_fr(sr, f0, dBgain, Q, eq_type):
+    sos = get_eq_sos(sr, f0, dBgain, Q, eq_type)
+    sos = sos.reshape((1, 6))
+    f, z = signal.sosfreqz(sos, fs=sr)
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
+
+def get_eq(y, sr, f0, dBgain, Q, eq_type, axis=0):
+    sos = get_eq_sos(sr, f0, dBgain, Q, eq_type)
+    sos = sos.reshape((1, 6))
+    return signal.sosfilt(sos, y, axis=axis)
+
+def get_eqsos_sos(sr, f0: list, dBgain: list, Q: list, eq_type: list):
+    # get the sos parameters for sos eq (i.e. more than 2 sos).
+    assert 1 < len(f0) == len(dBgain) == len(Q) == len(eq_type)
+    nsos = len(f0)
+    sos = []
+    for i in range(nsos):
+        f0_, dBgain_, Q_, eq_type_ = f0[i], dBgain[i], Q[i], eq_type[i]
+        sos_ = get_eq_sos(sr, f0_, dBgain_, Q_, eq_type_)
+        sos.append(sos_)
+    return np.array(sos)
+
+def get_eqsos_fr(sr, f0: list, dBgain: list, Q: list, eq_type: list):
+    sos = get_eqsos_sos(sr, f0, dBgain, Q, eq_type)
+    f, z = signal.sosfreqz(sos, fs=sr)
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
+
+def get_eqsos(y, sr, f0: list, dBgain: list, Q: list, eq_type: list, axis=0):
+    sos = get_eqsos_sos(sr, f0, dBgain, Q, eq_type)
+    return signal.sosfilt(sos, y, axis=axis)
+        
+# Time-frequency transform
+def get_fftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.fft(y, axis=axis, norm='backward'))
 
-def get_rfftm(y, axis=0):
+def get_rfftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.rfft(y, axis=axis, norm='backward'))
 
-def get_fft(y, axis=0):
+def get_fft(y, axis=-1):
     return fft.fft(y, axis=axis, norm='backward')
 
-def get_ifft(y_fft, axis=0):
+def get_ifft(y_fft, axis=-1):
     return fft.ifft(y_fft, axis=axis, norm='backward')
 
-def get_rfft(y, axis=0):
+def get_rfft(y, axis=-1):
     return fft.rfft(y, axis=axis, norm='backward')
 
-def get_irfft(y_rfft, axis=0):
+def get_irfft(y_rfft, axis=-1):
     return fft.irfft(y_rfft, axis=axis, norm='backward')
 
-def get_dct(y, axis=0, dct_type=2):
+def get_dct(y, axis=-1, dct_type=2):
     return fft.dct(au, dct_type, axis=axis, norm='backward')
 
-def get_idct(y_dct, axis=0, dct_type=2):
+def get_idct(y_dct, axis=-1, dct_type=2):
     return fft.idct(y_dct, dct_type, axis=axis, norm='backward')
 
-def get_hilbert(y, axis=0):
+def get_hilbert(y, axis=-1):
     return signal.hilbert(y, axis=axis)
 
-def get_hilbert_ap(y, axis=0):
+def get_hilbert_ap(y, axis=-1):
     # This returns (am, pm), the instaneous amplitude and phase arrays.
     ya = signal.hilbert(y, axis=axis)
     return np.abs(ya), np.unwrap(np.angle(ya))
 
-def get_hilbert_af(y, sr, axis=0):
+def get_hilbert_af(y, sr, axis=-1):
     # This returns (am, fm), the instaneous amplitude and frequency arrays.
     # The length of the fm array is reduced by one.
     ya = signal.hilbert(y, axis=axis)
     am = np.abs(ya)
     if y.ndim == 2:
-        if axis == 1:
+        if axis == -1 or axis == 1:
             fm = 0.5*sr*(ya.real[:,:-1]*np.diff(ya.imag,axis=1) - \
                          ya.imag[:,:-1]*np.diff(ya.real,axis=1)) / \
                          ((ya.real[:,:-1]**2 + ya.imag[:,:-1]**2)*np.pi)
@@ -61,7 +163,6 @@ def get_ihilbert(ya):
     return np.real(ya)
 
 def get_ihilbert_ap(am, pm):
-    ya = np.empty(am.shape, dtype=np.complex128)
     return am*np.cos(pm) 
 
 class stft_class():
@@ -204,17 +305,18 @@ class stft_class():
         p_noise = np.angle(z_noise*np.exp(0.5*np.pi*1.0j))
         print(f'p_noise.shape = {p_noise.shape}')
         return p_noise    
- 
-def get_sinewave(sr, du, f, phase=0, A=0.5, stereo=False, ls=None, ts=None):
+
+# Test signal
+def get_sinewave(sr, du=1.0, f, phase=0, A=0.3, stereo=False, ls=None, ts=None):
     """
     Generate a pure sine wave for testing.
-    sr: int (Hz). Sample rate.
-    du: float (seconds). Duration of sinewave.
-    f: float (Hz). Frequency.
+    sr: positive int (Hz). Sample rate.
+    du: positive float (seconds). Duration of sinewave.
+    f: positive float (Hz). Frequency.
     phase: float (rad angle). Initial phase.
-    A: float (amp). Maxinum amplitude.
-    ls: float (seconds). Duration of leading silence.
-    ts: float (seconds). Duration of trailing silence.
+    A: positive float (amp). Maxinum amplitude.
+    ls: positive float (seconds). Duration of leading silence.
+    ts: positive float (seconds). Duration of trailing silence.
     stereo: bool. If true, return a 2d array. If false, return a 1d array.
     """
     size = int(sr*du)
@@ -229,14 +331,14 @@ def get_sinewave(sr, du, f, phase=0, A=0.5, stereo=False, ls=None, ts=None):
     else:
         return y
     
-def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
+def get_uniform_noise(sr, du=1.0, A=0.3, ls=None, ts=None, stereo=False):
     """
     Generate a uniform white noise signal for testing.
-    sr: int (Hz). Sample rate.
-    du: float (seconds). Duration of sinewave.
-    A: float (amp). Maxinum amplitude.
-    ls: float (seconds). Duration of leading silence.
-    ts: float (seconds). Duration of trailing silence.
+    sr: positive int (Hz). Sample rate.
+    du: positive float (seconds). Duration of sinewave.
+    A: positive float (amp). Maxinum amplitude.
+    ls: positive float (seconds). Duration of leading silence.
+    ts: positive float (seconds). Duration of trailing silence.
     stereo: bool. If true, return a 2d array. If false, return a 1d array.
     """
     size = int(sr*du)
@@ -254,7 +356,37 @@ def get_white_noise(sr, du, A=0.5, win=None, ls=None, ts=None, stereo=False):
             noise = np.append(noise, np.zeros((int(sr*ts), 2)), axis=0)
     return noise
 
-def get_silence(sr, du, stereo=False):
+def get_gaussian_noise(sr, du=1.0, A=0.3, limit=3.0, ls=None, ts=None, stereo=False):
+    """
+    Generate a gaussian white noise signal for testing.
+    sr: positive int (Hz). Sample rate.
+    du: positive float (seconds). Duration of sinewave.
+    A: positive float (amp). Maxinum amplitude.
+    limit: positive float. Values out of range(-limit*std, limit*std) will be set to -limit*std or limit*std.
+    ls: positive float (seconds). Duration of leading silence.
+    ts: positive float (seconds). Duration of trailing silence.
+    stereo: bool. If true, return a 2d array. If false, return a 1d array.
+    """
+    size = int(sr*du)
+    if stereo == False: # mono
+        noise = np.random.normal(mean, std, size)*A/limit
+        noise[noise < -A] = -A
+        noise[noise > A] = A
+        if ls:
+            noise = np.append(np.zeros(int(sr*ls)), noise)
+        if ts:
+            noise = np.append(noise, np.zeros(int(sr*ts)))
+    else:
+        noise = np.random.uniform(-1, 1, (size, 2))*A/limit
+        noise[noise < -A] = -A
+        noise[noise > A] = A
+        if ls:
+            noise = np.append(np.zeros((int(sr*ls), 2)), noise, axis=0)
+        if ts:
+            noise = np.append(noise, np.zeros((int(sr*ts), 2)), axis=0)
+    return noise
+
+def get_silence(sr, du=1.0, stereo=False):
     """
     Generate a silence signal for testing.
     sr: int (Hz). Sample rate.
@@ -267,6 +399,7 @@ def get_silence(sr, du, stereo=False):
     else:
         return np.zeros((size, 2))
 
+# Others
 def get_idx_array(y):
     return np.arange(y.size)
 
