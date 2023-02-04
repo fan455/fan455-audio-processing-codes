@@ -313,7 +313,7 @@ class stft_class():
         return p_noise    
 
 # Test signal
-def get_sinewave(sr, du=1.0, f, phase=0, A=0.3, stereo=False, ls=None, ts=None):
+def get_sinewave(sr, du=1.0, f=440, phase=0, A=0.3, stereo=False, ls=None, ts=None):
     """
     Generate a pure sine wave for testing.
     sr: positive int (Hz). Sample rate.
