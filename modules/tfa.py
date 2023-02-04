@@ -117,7 +117,7 @@ def get_rfftm(y, axis=-1):
 def get_rfftmf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
     y_rfftm = np.abs(fft.rfft(y, axis=axis, norm='backward'))
-    f = np.arange(y_rfft.size)*sr/y.size
+    f = np.arange(y_rfftm.size)*sr/y.size
     return y_rfftm, f
 
 def get_fft(y, axis=-1):
@@ -375,7 +375,7 @@ def get_gaussian_noise(sr, du=1.0, A=0.3, limit=3.0, ls=None, ts=None, stereo=Fa
     """
     size = int(sr*du)
     if stereo == False: # mono
-        noise = np.random.normal(mean, std, size)*A/limit
+        noise = np.random.normal(0.0, 1.0, size)*A/limit
         noise[noise < -A] = -A
         noise[noise > A] = A
         if ls:
@@ -383,7 +383,7 @@ def get_gaussian_noise(sr, du=1.0, A=0.3, limit=3.0, ls=None, ts=None, stereo=Fa
         if ts:
             noise = np.append(noise, np.zeros(int(sr*ts)))
     else:
-        noise = np.random.uniform(-1, 1, (size, 2))*A/limit
+        noise = np.random.normal(0.0, 1.0, (size, 2))*A/limit
         noise[noise < -A] = -A
         noise[noise > A] = A
         if ls:
