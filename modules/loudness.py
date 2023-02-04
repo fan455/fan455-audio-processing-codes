@@ -50,16 +50,16 @@ class mlufs_meter():
         self.z_threshold = np.power(10, (self.threshold+0.691)/10)
         if self.sr == 48000:
             # coefficients in the ITU documentation.
-            self.d0 = np.array([1.53512485958697, -2.69169618940638, 1.19839281085285])
-            self.c0 = np.array([1.0 , -1.69065929318241, 0.73248077421585])
-            self.d1 = np.array([1.0, -2.0, 1.0])
-            self.c1 = np.array([1.0, -1.99004745483398, 0.99007225036621])
+            b0_1, b1_1, b2_1 = 1.53512485958697, -2.69169618940638, 1.19839281085285
+            a0_1, a1_1, a2_1 = 1.0 , -1.69065929318241, 0.73248077421585
+            b0_2, b1_2, b2_2 = 1.0, -2.0, 1.0
+            a0_2, a1_2, a2_2 = 1.0, -1.99004745483398, 0.99007225036621
         elif self.sr == 44100:
-            # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
-            self.d0 = np.array([1.5308412300498355, -2.6509799951536985, 1.1690790799210682])
-            self.c0 = np.array([1.0, -1.6636551132560204, 0.7125954280732254])
-            self.d1 = np.array([1.0, -2.0, 1.0])
-            self.c1 = np.array([1.0, -1.9891696736297957, 0.9891990357870394])
+            # coefficients calculation by BrechtDeMan, super close to the ITU documentation.
+            b0_1, b1_1, b2_1 = 1.5308412300498355, -2.6509799951536985, 1.1690790799210682
+            a0_1, a1_1, a2_1 = 1.0, -1.6636551132560204, 0.7125954280732254
+            b0_2, b1_2, b2_2 = 1.0, -2.0, 1.0
+            a0_2, a1_2, a2_2 = 1.0, -1.9891696736297957, 0.9891990357870394
         else:
             # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
             # pre-filter 1
@@ -69,29 +69,29 @@ class mlufs_meter():
             K  = np.tan(np.pi * f0 / sr) 
             Vh = np.power(10.0, G / 20.0)
             Vb = np.power(Vh, 0.499666774155)
-            a0_ = 1.0 + K / Q + K * K
-            b0 = (Vh + Vb * K / Q + K * K) / a0_
-            b1 = 2.0 * (K * K -  Vh) / a0_
-            b2 = (Vh - Vb * K / Q + K * K) / a0_
-            a0 = 1.0
-            a1 = 2.0 * (K * K - 1.0) / a0_
-            a2 = (1.0 - K / Q + K * K) / a0_
-            self.d0, self.c0 = np.array([b0, b1, b2]), np.array([a0, a1, a2])
+            a0_1_ = 1.0 + K / Q + K * K
+            b0_1 = (Vh + Vb * K / Q + K * K) / a0_1_
+            b1_1 = 2.0 * (K * K -  Vh) / a0_1_
+            b2_1 = (Vh - Vb * K / Q + K * K) / a0_1_
+            a0_1 = 1.0
+            a1_1 = 2.0 * (K * K - 1.0) / a0_1_
+            a2_1 = (1.0 - K / Q + K * K) / a0_1_
             # pre-filter 2
             f0 = 38.13547087613982
             Q  = 0.5003270373253953
             K  = np.tan(np.pi * f0 / sr)
-            a0 = 1.0
-            a1 = 2.0 * (K * K - 1.0) / (1.0 + K / Q + K * K)
-            a2 = (1.0 - K / Q + K * K) / (1.0 + K / Q + K * K)
-            b0 = 1.0
-            b1 = -2.0
-            b2 = 1.0
-            self.d1, self.c1 = np.array([b0, b1, b2]), np.array([a0, a1, a2])
+            a0_2 = 1.0
+            a1_2 = 2.0 * (K * K - 1.0) / (1.0 + K / Q + K * K)
+            a2_2 = (1.0 - K / Q + K * K) / (1.0 + K / Q + K * K)
+            b0_2 = 1.0
+            b1_2 = -2.0
+            b2_2 = 1.0
+            
+        self.sos = np.array([[b0_1, b1_1, b2_1, a0_1, a1_1, a2_1], \
+                            [b0_2, b1_2, b2_2, a0_2, a1_2, a2_2]])
             
     def prefilter(self, au):
-        au = signal.lfilter(self.d0, self.c0, au, axis=0)
-        au = signal.lfilter(self.d1, self.c1, au, axis=0)
+        au = signal.sosfilt(self.sos, au, axis=0)
         return au
 
     def get(self, au, cut_start=None):
@@ -156,16 +156,16 @@ class ilufs_meter():
         self.z_threshold = np.power(10, (self.threshold+0.691)/10)
         if self.sr == 48000:
             # coefficients in the ITU documentation.
-            self.d0 = np.array([1.53512485958697, -2.69169618940638, 1.19839281085285])
-            self.c0 = np.array([1.0 , -1.69065929318241, 0.73248077421585])
-            self.d1 = np.array([1.0, -2.0, 1.0])
-            self.c1 = np.array([1.0, -1.99004745483398, 0.99007225036621])
+            b0_1, b1_1, b2_1 = 1.53512485958697, -2.69169618940638, 1.19839281085285
+            a0_1, a1_1, a2_1 = 1.0 , -1.69065929318241, 0.73248077421585
+            b0_2, b1_2, b2_2 = 1.0, -2.0, 1.0
+            a0_2, a1_2, a2_2 = 1.0, -1.99004745483398, 0.99007225036621
         elif self.sr == 44100:
-            # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
-            self.d0 = np.array([1.5308412300498355, -2.6509799951536985, 1.1690790799210682])
-            self.c0 = np.array([1.0, -1.6636551132560204, 0.7125954280732254])
-            self.d1 = np.array([1.0, -2.0, 1.0])
-            self.c1 = np.array([1.0, -1.9891696736297957, 0.9891990357870394])
+            # coefficients calculation by BrechtDeMan, super close to the ITU documentation.
+            b0_1, b1_1, b2_1 = 1.5308412300498355, -2.6509799951536985, 1.1690790799210682
+            a0_1, a1_1, a2_1 = 1.0, -1.6636551132560204, 0.7125954280732254
+            b0_2, b1_2, b2_2 = 1.0, -2.0, 1.0
+            a0_2, a1_2, a2_2 = 1.0, -1.9891696736297957, 0.9891990357870394
         else:
             # coefficients calculation by BrechtDeMan, super close to the ITU documentation. 
             # pre-filter 1
@@ -175,29 +175,29 @@ class ilufs_meter():
             K  = np.tan(np.pi * f0 / sr) 
             Vh = np.power(10.0, G / 20.0)
             Vb = np.power(Vh, 0.499666774155)
-            a0_ = 1.0 + K / Q + K * K
-            b0 = (Vh + Vb * K / Q + K * K) / a0_
-            b1 = 2.0 * (K * K -  Vh) / a0_
-            b2 = (Vh - Vb * K / Q + K * K) / a0_
-            a0 = 1.0
-            a1 = 2.0 * (K * K - 1.0) / a0_
-            a2 = (1.0 - K / Q + K * K) / a0_
-            self.d0, self.c0 = np.array([b0,b1,b2]), np.array([a0,a1,a2])
+            a0_1_ = 1.0 + K / Q + K * K
+            b0_1 = (Vh + Vb * K / Q + K * K) / a0_1_
+            b1_1 = 2.0 * (K * K -  Vh) / a0_1_
+            b2_1 = (Vh - Vb * K / Q + K * K) / a0_1_
+            a0_1 = 1.0
+            a1_1 = 2.0 * (K * K - 1.0) / a0_1_
+            a2_1 = (1.0 - K / Q + K * K) / a0_1_
             # pre-filter 2
             f0 = 38.13547087613982
             Q  = 0.5003270373253953
             K  = np.tan(np.pi * f0 / sr)
-            a0 = 1.0
-            a1 = 2.0 * (K * K - 1.0) / (1.0 + K / Q + K * K)
-            a2 = (1.0 - K / Q + K * K) / (1.0 + K / Q + K * K)
-            b0 = 1.0
-            b1 = -2.0
-            b2 = 1.0
-            self.d1, self.c1 = np.array([b0,b1,b2]), np.array([a0,a1,a2])
+            a0_2 = 1.0
+            a1_2 = 2.0 * (K * K - 1.0) / (1.0 + K / Q + K * K)
+            a2_2 = (1.0 - K / Q + K * K) / (1.0 + K / Q + K * K)
+            b0_2 = 1.0
+            b1_2 = -2.0
+            b2_2 = 1.0
+            
+        self.sos = np.array([[b0_1, b1_1, b2_1, a0_1, a1_1, a2_1], \
+                            [b0_2, b1_2, b2_2, a0_2, a1_2, a2_2]])
             
     def prefilter(self, au):
-        au = signal.lfilter(self.d0, self.c0, au, axis=0)
-        au = signal.lfilter(self.d1, self.c1, au, axis=0)
+        au = signal.sosfilt(self.sos, au, axis=0)
         return au
 
     def get(self, au, cut_start=None):
