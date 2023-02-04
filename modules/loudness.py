@@ -88,10 +88,10 @@ class mlufs_meter():
             b1_2 = -2.0
             b2_2 = 1.0
 
-        self.b_1 = np.array([b0_1, b1_1, b2_1])
-        self.a_1 = np.array([a0_1, a1_1, a2_1])
-        self.b_2 = np.array([b0_2, b1_2, b2_2])
-        self.a_2 = np.array([a0_2, a1_2, a2_2])
+            self.b_1 = np.array([b0_1, b1_1, b2_1])
+            self.a_1 = np.array([a0_1, a1_1, a2_1])
+            self.b_2 = np.array([b0_2, b1_2, b2_2])
+            self.a_2 = np.array([a0_2, a1_2, a2_2])
             
     def prefilter(self, au):
         au = signal.lfilter(self.b_1, self.a_1, au, axis=0)
@@ -225,10 +225,10 @@ class ilufs_meter():
             b1_2 = -2.0
             b2_2 = 1.0
 
-        self.b_1 = np.array([b0_1, b1_1, b2_1])
-        self.a_1 = np.array([a0_1, a1_1, a2_1])
-        self.b_2 = np.array([b0_2, b1_2, b2_2])
-        self.a_2 = np.array([a0_2, a1_2, a2_2])
+            self.b_1 = np.array([b0_1, b1_1, b2_1])
+            self.a_1 = np.array([a0_1, a1_1, a2_1])
+            self.b_2 = np.array([b0_2, b1_2, b2_2])
+            self.a_2 = np.array([a0_2, a1_2, a2_2])
             
     def prefilter(self, au):
         au = signal.lfilter(self.b_1, self.a_1, au, axis=0)
