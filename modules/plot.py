@@ -138,20 +138,6 @@ def plot_frp(frp, f, base=10, linthresh=10, linscale=10, subs=None, \
     if grid:
         ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
-
-def plot_fr(fr, f, grid=True, bgcolor='#D1DDC5', **kwargs):
-    # plot frequency response - magnitude.
-    fig, ax = plt.subplots(facecolor=bgcolor)
-    ax.set_facecolor(bgcolor)
-    ax.set_xscale('symlog', linthresh=10, linscale=10)
-    ax.set_yscale('function', functions=())
-    ax.plot(f, frm, **kwargs)
-    plt.title(title)
-    plt.xlabel(xlabel, loc='right')
-    plt.ylabel(ylabel, loc='center')
-    if grid:
-        ax.grid(color='grey', linewidth='1', linestyle='-.')
-    plt.show()
                 
 def plot_modes(Modes, t, au=None, res=None, compare_with_noise=True, title=None, \
                xlabel='time', ylabel='magnitude', grid=False, bgcolor='#D1DDC5', **kwargs):
