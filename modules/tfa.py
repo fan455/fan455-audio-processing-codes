@@ -4,172 +4,222 @@ Audio Time-Frequency Analysis
 import numpy as np
 from scipy import fft, signal
 
-# IIR Filter
-def get_iir_fr(b, a, sr, nf=None):
-    # get the frequency response of a digital iir filter
+# IIR filter
+def iir(y, b, a, axis=0):
+    return signal.lfilter(b, a, y, axis=axis)
+
+def iirsos(y, sos, axis=0):
+    return signal.sosfilt(sos, y, axis=axis)
+
+def bq(y, sr, bqtype, freq, Q, gain=None, axis=0):
+    """
+    Single biquad filter
+
+    Parameters:
+    y: ndarray. The signal to be filtered.
+    sr: positive int (Hz). Sample rate of y.
+    bqtype: function. Please refer to the "IIR filter coefficient" section.
+    freq: positive float. The "significant frequency".
+    Q: positive float. Quality factor.
+    gain: float (dB). For peak, low shelf and high shelf filters only.
+    axis: int. Which axis of y to filter along.
+
+    Returns:
+    y_filtered: ndarray. Filtered signal.
+    """
+    sos = bqtype(sr, freq, Q, gain)
+    return iirsos(y, sos, axis=axis)
+
+def bqsos(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
+    # Cascaded-sos biquad filter, with list inputs.
+    sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
+    return iirsos(y, sos, axis=axis)
+
+# IIR filter frequency response
+def fr_irr(sr, b, a):
+    # This returns frequency, amplitude and phase arrays.
     f, z = signal.freqz(b, a, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
-def get_iirsos_fr(sos, sr, nf=None):
-    # get the frequency response of a digital sos iir filter
-    if sos.ndim == 1:
-        sos = sos.reshape((1, 6))
+def fr_irrsos(sr, sos):
+    # This returns frequency, amplitude and phase arrays.
     f, z = signal.sosfreqz(sos, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
-def get_iirsos(y, sos, axis=0):
-    if sos.ndim == 1:
-        sos = sos.reshape((1, 6))
-    return signal.sosfilt(sos, y, axis=axis)
+def fr_bq(sr, bqtype, freq, Q, gain=None):
+    # This returns frequency, amplitude and phase arrays.
+    sos = bqtype(sr, freq, Q, gain)
+    return fr_irrsos(sr, sos)
 
-# 1-sos equalizer
-def get_eq_sos(sr, f0, dBgain, Q, eq_type):
-    # get the sos parameters for eq.
-    w0 = 2*np.pi*f0/sr
-    cosw0, sinw0 = np.cos(w0), np.sin(w0)
-    alpha = 0.5*sinw0/Q
-    if eq_type == 'low pass':
-        a0_ = 1+alpha
-        b = np.array([0.5*(1-cosw0), 1-cosw0, 0.5*(1-cosw0)])/a0_
-        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
-    elif eq_type == 'high pass':
-        a0_ = 1+alpha
-        b = np.array([0.5*(1+cosw0), -1-cosw0, 0.5*(1+cosw0)])/a0_
-        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
-    elif eq_type == 'peak':
-        A = np.power(10, dBgain/40)
-        a0_ = 1+alpha/A
-        b = np.array([1+alpha*A, -2*cosw0, 1-alpha*A])/a0_
-        a = np.array([1.0, -2*cosw0/a0_, (1-alpha/A)/a0_])
-    elif eq_type == 'band pass':
-        a0_ = 1+alpha
-        b = np.array([alpha, 0.0, -alpha])/a0_
-        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
-    elif eq_type == 'band pass QdB':
-        a0_ = 1+alpha
-        b = np.array([Q*alpha, 0.0, -Q*alpha])/a0_
-        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
-    elif eq_type == 'low shelf':
-        A = np.power(10, dBgain/40)
-        a0_ = (A+1) + (A-1)*cosw0 + 2*np.sqrt(A)*alpha
-        b0 = A*((A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha)
-        b1 = 2*A*((A-1) - (A+1)*cosw0)
-        b2 = A*((A+1) - (A-1)*cosw0 - 2*np.sqrt(A)*alpha)
-        a1 = -2*((A-1) + (A+1)*cosw0)
-        a2 = (A+1) + (A-1)*cosw0 - 2*np.sqrt(A)*alpha
-        b = A*np.array([b0, b1, b2])/a0_
-        a = A*np.array([1.0, a1/a0_, a2/a0_])
-    elif eq_type == 'low shelf':
-        A = np.power(10, dBgain/40)
-        a0_ = (A+1) - (A-1)*cosw0 + 2*np.sqrt(A)*alpha
-        b0 = A*((A+1) + (A-1)*cosw0 + 2*np.sqrt(A)*alpha)
-        b1 = -2*A*((A-1) + (A+1)*cosw0)
-        b2 = A*((A+1) + (A-1)*cosw0 - 2*np.sqrt(A)*alpha)
-        a1 = 2*((A-1) - (A+1)*cosw0)
-        a2 = (A+1) - (A-1)*cosw0 - 2*np.sqrt(A)*alpha
-        b = A*np.array([b0, b1, b2])/a0_
-        a = A*np.array([1.0, a1/a0_, a2/a0_])
-    elif eq_type == 'notch':
-        a0_ = 1+alpha
-        b = np.array([1.0, -2*cosw0, 1.0])/a0_
-        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
-    elif eq_type == 'all pass':
-        a0_ = 1+alpha
-        b = np.array([1-alpha, -2*cosw0, 1+alpha])/a0_
-        a = np.array([1.0, -2*cosw0/a0_, (1-alpha)/a0_])
-    else:
-        raise ValueError(f'eq_type "{eq_type}" is not supported.')
-    return np.append(b, a)
+def fr_bqsos(sr, bqtype_list, freq_list, Q_list, gain_list=None):
+    # This returns frequency, amplitude and phase arrays.
+    sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
+    return fr_irrsos(sr, sos)
 
-def get_eq_fr(sr, f0, dBgain, Q, eq_type):
-    sos = get_eq_sos(sr, f0, dBgain, Q, eq_type)
-    sos = sos.reshape((1, 6))
-    f, z = signal.sosfreqz(sos, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
-
-def get_eq_fr_inputsos(sr, sos):
-    sos = sos.reshape((1, 6))
-    f, z = signal.sosfreqz(sos, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
-
-def get_eq(y, sr, f0, dBgain, Q, eq_type, axis=0):
-    sos = get_eq_sos(sr, f0, dBgain, Q, eq_type)
-    sos = sos.reshape((1, 6))
-    return signal.sosfilt(sos, y, axis=axis)
-
-def get_eq_inputsos(y, sos, axis=0):
-    return signal.sosfilt(sos, y, axis=axis)
-
-# n-sos equalizer
-def get_eqn_sos(sr, f0: list, dBgain: list, Q: list, eq_type: list):
-    # get the sos parameters for sos eq (i.e. more than 2 sos).
-    assert 1 < len(f0) == len(dBgain) == len(Q) == len(eq_type)
-    nsos = len(f0)
-    sos = []
+# IIR filter coefficient
+# Reference: Audio EQ Cookbook (W3C Working Group Note, 08 June 2021)
+def get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list=None):
+    # Get the sos coefficient array of cascaded biquad filters.
+    # Returned sos array shape is (number of sos, 6).
+    # The length of input lists (should be the same) is the number of sos.
+    nsos = len(freq_list)
+    if gain_list is None:
+        gain_list = [None]*nsos
+    sos = np.empty((0, 6))
     for i in range(nsos):
-        f0_, dBgain_, Q_, eq_type_ = f0[i], dBgain[i], Q[i], eq_type[i]
-        sos_ = get_eq_sos(sr, f0_, dBgain_, Q_, eq_type_)
-        sos.append(sos_)
-    return np.array(sos)
+        bqtype = bqtype_list[i]
+        freq = freq_list[i]
+        Q = Q_list[i]
+        gain = gain_list[i]
+        sos_ = bqtype(sr, freq, Q, gain)
+        sos = np.append(sos, sos_, axis=0)
+    return sos
 
-def get_eqn_fr(sr, f0: list, dBgain: list, Q: list, eq_type: list):
-    sos = get_eqn_sos(sr, f0, dBgain, Q, eq_type)
-    f, z = signal.sosfreqz(sos, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
-
-def get_eqn_fr_inputsos(sr, sos):
-    f, z = signal.sosfreqz(sos, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z)) # f, amp, phase
-
-def get_eqn(y, sr, f0: list, dBgain: list, Q: list, eq_type: list, axis=0):
-    sos = get_eqn_sos(sr, f0, dBgain, Q, eq_type)
-    return signal.sosfilt(sos, y, axis=axis)
-
-def get_eqn_inputsos(y, sos, axis=0):
-    return signal.sosfilt(sos, y, axis=axis)
+def bq_apf(sr, freq, Q, gain=None):
+    # biquad all pass filter
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    norm = 1+alpha    
+    b = np.array([1-alpha, -2*cosw, 1+alpha])/norm
+    a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
+    return np.array([np.append(b, a)])
         
+def bq_lpf(sr, freq, Q, gain=None):
+    # biquad low pass filter
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    norm = 1+alpha    
+    b = np.array([0.5*(1-cosw), 1-cosw, 0.5*(1-cosw)])/norm
+    a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
+    return np.array([np.append(b, a)])
+
+def bq_hpf(sr, freq, Q, gain=None):
+    # biquad high pass filter
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    norm = 1+alpha    
+    b = np.array([0.5*(1+cosw), -1-cosw, 0.5*(1+cosw)])/norm
+    a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
+    return np.array([np.append(b, a)])
+
+def bq_bpf(sr, freq, Q, gain=None):
+    # biquad band pass filter with constant 0 dB peak gain.
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    norm = 1+alpha    
+    b = np.array([alpha, 0.0, -alpha])/norm
+    a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
+    return np.array([np.append(b, a)])
+
+def bq_bpf2(sr, freq, Q, gain=None):
+    # biquad band pass filter with constant Q dB peak gain.
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    norm = 1+alpha    
+    b = np.array([Q*alpha, 0.0, -Q*alpha])/norm
+    a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
+    return np.array([np.append(b, a)])
+
+def bq_notch(sr, freq, Q, gain=None):
+    # biquad notch filter
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    norm = 1+alpha    
+    b = np.array([1.0, -2*cosw, 1.0])/norm
+    a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
+    return np.array([np.append(b, a)])
+    
+def bq_peak(sr, freq, Q, gain):
+    # biquad peaking EQ
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    A = np.power(10, gain/40)
+    norm = 1+alpha/A    
+    b = np.array([1+alpha*A, -2*cosw, 1-alpha*A])/norm
+    a = np.array([1.0, -2*cosw/norm, (1-alpha/A)/norm])
+    return np.array([np.append(b, a)])
+
+def bq_ls(sr, freq, Q, gain):
+    # biquad low shelf
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    A = np.power(10, gain/40)
+    norm = (A+1) + (A-1)*cosw + 2*np.sqrt(A)*alpha    
+    b0 = A*((A+1) - (A-1)*cosw + 2*np.sqrt(A)*alpha)
+    b1 = 2*A*((A-1) - (A+1)*cosw)
+    b2 = A*((A+1) - (A-1)*cosw - 2*np.sqrt(A)*alpha)
+    a1 = -2*((A-1) + (A+1)*cosw)
+    a2 = (A+1) + (A-1)*cosw - 2*np.sqrt(A)*alpha
+    b = A*np.array([b0, b1, b2])/norm
+    a = A*np.array([1.0, a1/norm, a2/norm])
+    return np.array([np.append(b, a)])
+
+def bq_hs(sr, freq, Q, gain):
+    # biquad high shelf
+    w = 2*np.pi*freq/sr
+    cosw, sinw = np.cos(w), np.sin(w)
+    alpha = 0.5*sinw/Q
+    A = np.power(10, gain/40)
+    norm = (A+1) - (A-1)*cosw + 2*np.sqrt(A)*alpha    
+    b0 = A*((A+1) + (A-1)*cosw + 2*np.sqrt(A)*alpha)
+    b1 = -2*A*((A-1) + (A+1)*cosw)
+    b2 = A*((A+1) + (A-1)*cosw - 2*np.sqrt(A)*alpha)
+    a1 = 2*((A-1) - (A+1)*cosw)
+    a2 = (A+1) - (A-1)*cosw - 2*np.sqrt(A)*alpha
+    b = A*np.array([b0, b1, b2])/norm
+    a = A*np.array([1.0, a1/norm, a2/norm])
+    return np.array([np.append(b, a)])
+
 # Time-frequency transform
-def get_fftm(y, axis=-1):
+def fftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.fft(y, axis=axis, norm='backward'))
 
-def get_rfftm(y, axis=-1):
+def rfftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.rfft(y, axis=axis, norm='backward'))
 
-def get_rfftmf(y, sr, axis=-1):
+def rfftmf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
     y_rfftm = np.abs(fft.rfft(y, axis=axis, norm='backward'))
-    y_rfftf = np.arange(y_rfftm.size)*sr/y.size
+    y_rfftf = fft.fftfreq(y.size, d=1/sr)
     return y_rfftm, y_rfftf
 
-def get_fft(y, axis=-1):
+def fft(y, axis=-1):
     return fft.fft(y, axis=axis, norm='backward')
 
 def get_ifft(y_fft, axis=-1):
     return fft.ifft(y_fft, axis=axis, norm='backward')
 
-def get_rfft(y, axis=-1):
+def rfft(y, axis=-1):
     return fft.rfft(y, axis=axis, norm='backward')
 
-def get_irfft(y_rfft, axis=-1):
+def irfft(y_rfft, axis=-1):
     return fft.irfft(y_rfft, axis=axis, norm='backward')
 
-def get_dct(y, axis=-1, dct_type=2):
+def dct(y, axis=-1, dct_type=2):
     return fft.dct(au, dct_type, axis=axis, norm='backward')
 
-def get_idct(y_dct, axis=-1, dct_type=2):
+def idct(y_dct, axis=-1, dct_type=2):
     return fft.idct(y_dct, dct_type, axis=axis, norm='backward')
 
-def get_hilbert(y, axis=-1):
+def hilbert(y, axis=-1):
     return signal.hilbert(y, axis=axis)
 
-def get_hilbert_ap(y, axis=-1):
+def hilbert_ap(y, axis=-1):
     # This returns (am, pm), the instaneous amplitude and phase arrays.
     ya = signal.hilbert(y, axis=axis)
     return np.abs(ya), np.unwrap(np.angle(ya))
 
-def get_hilbert_af(y, sr, axis=-1):
+def hilbert_af(y, sr, axis=-1):
     # This returns (am, fm), the instaneous amplitude and frequency arrays.
     # The length of the fm array is reduced by one.
     ya = signal.hilbert(y, axis=axis)
@@ -188,10 +238,10 @@ def get_hilbert_af(y, sr, axis=-1):
              ((ya.real[:-1]**2 + ya.imag[:-1]**2)*np.pi)
     return am, fm
 
-def get_ihilbert(ya):
+def ihilbert(ya):
     return np.real(ya)
 
-def get_ihilbert_ap(am, pm):
+def ihilbert_ap(am, pm):
     return am*np.cos(pm) 
 
 class stft_class():
