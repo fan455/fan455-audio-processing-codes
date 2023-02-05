@@ -18,7 +18,7 @@ def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
     if grid:
-        ax.grid(color='grey', linewidth='1', linestyle='-.')
+        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
   
 def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
@@ -51,7 +51,7 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
 
     if grid:
         for i in range(N):
-            ax[i].grid(color='grey', linewidth='1', linestyle='-.')
+            ax[i].grid(color='grey', linewidth='0.75', linestyle='-.')
     if title:
         fig.suptitle(title)
     plt.xlabel(xlabel, loc='right')
@@ -80,7 +80,7 @@ def plot_xint(y, x=None, title='title', xlabel='x', ylabel='y', \
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
     if grid:
-        ax.grid(color='grey', linewidth='1', linestyle='-.')
+        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
   
 def plot_scale(y, x, xscale='log', yscale=None, xscale_kwargs=None, yscale_kwargs=None, \
@@ -106,45 +106,30 @@ def plot_scale(y, x, xscale='log', yscale=None, xscale_kwargs=None, yscale_kwarg
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
     if grid:
-        ax.grid(color='grey', linewidth='1', linestyle='-.')
+        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
 
-def plot_frm(frm, f, base=10, linthresh=10, linscale=10, subs=None, \
-             delete_zero=True, grid=True, bgcolor='#D1DDC5', **kwargs):
-    # Plot frequency response: magnitude.
-    # base, linthresh linscale and subs are keyword arguments for 'matplotlib.scale.SymmetricalLogScale'.
-    # delete_zero=True may avoid bumpy's zero division warning.
-    # In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
-    if delete_zero:
-        frm, f = frm[1:], f[1:]
-    frm = 20*np.log10(frm)
-    fig, ax = plt.subplots(facecolor=bgcolor)
-    ax.set_facecolor(bgcolor)
-    ax.set_xscale('symlog', base=base, linthresh=linthresh, subs=subs, linscale=linscale)
-    ax.plot(f, frm, **kwargs)
-    plt.title('frequency response: magnitude')
-    plt.xlabel('frequency (Hz)', loc='right')
-    plt.ylabel('magnitude (dB)', loc='center')
-    if grid:
-        ax.grid(color='grey', linewidth='1', linestyle='-.')
-    plt.show()
-
-def plot_frp(frp, f, base=10, linthresh=10, linscale=10, subs=None, \
-             delete_zero=False, grid=True, bgcolor='#D1DDC5', **kwargs):
-    # Plot frequency response: phase.
+def plot_fscale(y, x, faxis='x', base=10, linthresh=10, linscale=0.25, subs=None, \
+                title='title', xlabel='frequency (Hz)', ylabel='magnitude', \
+                grid=True, bgcolor='#D1DDC5', **kwargs):
+    # Plot with scaled frequency axis.
     # base, linthresh linscale and subs are keyword arguments for 'matplotlib.scale.SymmetricalLogScale'.
     # In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
-    if delete_zero:
-        frp, f = frp[1:], f[1:]
     fig, ax = plt.subplots(facecolor=bgcolor)
     ax.set_facecolor(bgcolor)
-    ax.set_xscale('symlog', base=base, linthresh=linthresh, subs=subs, linscale=linscale)
-    ax.plot(f, frp, **kwargs)
-    plt.title('frequency response: phase')
-    plt.xlabel('frequency (Hz)', loc='right')
-    plt.ylabel('phase (rad)', loc='center')
+    if faxis == 'x':
+        ax.set_xscale('symlog', base=base, linthresh=linthresh, subs=subs, linscale=linscale)
+        ax.plot(x, y, **kwargs)
+        plt.xlabel('frequency (Hz)', loc='right')
+        plt.ylabel(ylabel, loc='center')
+    elif faxis =='y':
+        ax.set_yscale('symlog', base=base, linthresh=linthresh, subs=subs, linscale=linscale)
+        ax.plot(x, y, **kwargs)
+        plt.xlabel(xlabel, loc='right')
+        plt.ylabel('frequency (Hz)', loc='center')
+    plt.title(title)
     if grid:
-        ax.grid(color='grey', linewidth='1', linestyle='-.')
+        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
                 
 def plot_modes(Modes, t, au=None, res=None, compare_with_noise=True, title=None, \
@@ -196,7 +181,7 @@ def plot_modes(Modes, t, au=None, res=None, compare_with_noise=True, title=None,
     
     if grid:
         for i in range(nrows):
-            ax[i].grid(color='grey', linewidth='1', linestyle='-.')
+            ax[i].grid(color='grey', linewidth='0.75', linestyle='-.')
     if title:
         fig.suptitle(title)
     plt.xlabel(xlabel, loc='right')
@@ -217,5 +202,5 @@ def plot_au_mono(au, sr, title='title', grid=True, bgcolor='#D1DDC5'):
     plt.xlabel('time', loc='right')
     plt.ylabel('amplitude', loc='center')
     if grid:
-        ax.grid(color='grey', linewidth='1', linestyle='-.')
+        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
