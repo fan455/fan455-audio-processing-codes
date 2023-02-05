@@ -2,15 +2,14 @@
 Audio Time-Frequency Analysis
 """
 import numpy as np
-import scipy.fft
-import scipy.signal
+from scipy import fft, signal
 
 # IIR filter
 def iir(y, b, a, axis=0):
-    return scipy.signal.lfilter(b, a, y, axis=axis)
+    return signal.lfilter(b, a, y, axis=axis)
 
 def iirsos(y, sos, axis=0):
-    return scipy.signal.sosfilt(sos, y, axis=axis)
+    return signal.sosfilt(sos, y, axis=axis)
 
 def bq(y, sr, bqtype, freq, Q, gain=None, axis=0):
     """
@@ -39,12 +38,12 @@ def bqsos(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
 # IIR filter frequency response
 def fr_irr(sr, b, a):
     # This returns frequency, amplitude and phase arrays.
-    f, z = scipy.signal.freqz(b, a, fs=sr)
+    f, z = signal.freqz(b, a, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
 def fr_irrsos(sr, sos):
     # This returns frequency, amplitude and phase arrays.
-    f, z = scipy.signal.sosfreqz(sos, fs=sr)
+    f, z = signal.sosfreqz(sos, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
 def fr_bq(sr, bqtype, freq, Q, gain=None):
@@ -69,16 +68,16 @@ def repeat_sos(sos, n):
 
 def get_sos_butter(sr, btype, order, freq):
     # Get the sos of a butterworth IIR filter.
-    # scipy.signal.butter
+    # signal.butter
     # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
-    return scipy.signal.butter(order, freq, btype=btype, output='sos', fs=sr)
+    return signal.butter(order, freq, btype=btype, output='sos', fs=sr)
 
 def get_sos_iir(sr, ftype, btype, order, freq, rp=None, rs=None):
     # Get the sos of certain types of IRR filter.
-    # scipy.signal.iirfilter
+    # signal.iirfilter
     # ftype: 'butter', 'cheby1', 'cheby2', 'ellip', 'bessel'
     # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
-    return scipy.signal.iirfilter(order, freq, rp=rp, rs=rs, btype=btype, \
+    return signal.iirfilter(order, freq, rp=rp, rs=rs, btype=btype, \
                                   ftype=ftype, output='sos', fs=sr)
 
 def get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list=None):
@@ -202,50 +201,50 @@ def bq_highshelf(sr, freq, Q, gain):
     return np.array([np.append(b, a)])
 
 # Time-frequency transform
-def fftm(y, axis=-1):
+def get_fftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
-    return np.abs(scipy.fft.fft(y, axis=axis, norm='backward'))
+    return np.abs(fft.fft(y, axis=axis, norm='backward'))
 
-def rfftm(y, axis=-1):
+def get_rfftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
-    return np.abs(scipy.fft.rfft(y, axis=axis, norm='backward'))
+    return np.abs(fft.rfft(y, axis=axis, norm='backward'))
 
-def rfftmf(y, sr, axis=-1):
+def get_rfftmf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
-    y_rfftm = np.abs(scipy.fft.rfft(y, axis=axis, norm='backward'))
-    y_rfftf = scipy.fft.fftfreq(y.size, d=1/sr)
+    y_rfftm = np.abs(fft.rfft(y, axis=axis, norm='backward'))
+    y_rfftf = fft.fftfreq(y.size, d=1/sr)
     return y_rfftm, y_rfftf
 
-def fft(y, axis=-1):
-    return scipy.fft.fft(y, axis=axis, norm='backward')
+def get_fft(y, axis=-1):
+    return fft.fft(y, axis=axis, norm='backward')
 
-def ifft(y_fft, axis=-1):
-    return scipy.fft.ifft(y_fft, axis=axis, norm='backward')
+def get_ifft(y_fft, axis=-1):
+    return fft.ifft(y_fft, axis=axis, norm='backward')
 
-def rfft(y, axis=-1):
-    return scipy.fft.rfft(y, axis=axis, norm='backward')
+def get_rfft(y, axis=-1):
+    return fft.rfft(y, axis=axis, norm='backward')
 
-def irfft(y_rfft, axis=-1):
-    return scipy.fft.irfft(y_rfft, axis=axis, norm='backward')
+def get_irfft(y_rfft, axis=-1):
+    return fft.irfft(y_rfft, axis=axis, norm='backward')
 
-def dct(y, axis=-1, dct_type=2):
-    return scipy.fft.dct(au, dct_type, axis=axis, norm='backward')
+def get_dct(y, axis=-1, dct_type=2):
+    return fft.dct(au, dct_type, axis=axis, norm='backward')
 
-def idct(y_dct, axis=-1, dct_type=2):
-    return scipy.fft.idct(y_dct, dct_type, axis=axis, norm='backward')
+def get_idct(y_dct, axis=-1, dct_type=2):
+    return fft.idct(y_dct, dct_type, axis=axis, norm='backward')
 
-def hilbert(y, axis=-1):
-    return scipy.signal.hilbert(y, axis=axis)
+def get_hilbert(y, axis=-1):
+    return signal.hilbert(y, axis=axis)
 
-def hilbert_ap(y, axis=-1):
+def get_hilbert_ap(y, axis=-1):
     # This returns (am, pm), the instaneous amplitude and phase arrays.
-    ya = scipy.signal.hilbert(y, axis=axis)
+    ya = signal.hilbert(y, axis=axis)
     return np.abs(ya), np.unwrap(np.angle(ya))
 
-def hilbert_af(y, sr, axis=-1):
+def get_hilbert_af(y, sr, axis=-1):
     # This returns (am, fm), the instaneous amplitude and frequency arrays.
     # The length of the fm array is reduced by one.
-    ya = scipy.signal.hilbert(y, axis=axis)
+    ya = signal.hilbert(y, axis=axis)
     am = np.abs(ya)
     if y.ndim == 2:
         if axis == -1 or axis == 1:
@@ -261,10 +260,10 @@ def hilbert_af(y, sr, axis=-1):
              ((ya.real[:-1]**2 + ya.imag[:-1]**2)*np.pi)
     return am, fm
 
-def ihilbert(ya):
+def get_ihilbert(ya):
     return np.real(ya)
 
-def ihilbert_ap(am, pm):
+def get_ihilbert_ap(am, pm):
     return am*np.cos(pm) 
 
 class stft_class():
@@ -294,14 +293,14 @@ class stft_class():
         au: ndarray (dtype = float between -1 and 1). Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. 
 
         Returns:
-        f: 1d array. As scipy.signal.stft returns.
-        t: 1d array. As scipy.signal.stft returns.
+        f: 1d array. As signal.stft returns.
+        t: 1d array. As signal.stft returns.
         m: if self.fft_type='m'. The magnitudes array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]). PLEASE NOTE that the istft will use phases of a white noise!
         m, p: if self.fft_type='m, p'. The magnitudes array and phases array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]). The phase range is [-pi, pi].
         z: if self.fft_type='z'. The complex array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         zr, zi: if self.fft_type='zr, zi'. The complex array' real array and imaginary array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         """
-        f, t, z = scipy.signal.stft(au, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+        f, t, z = signal.stft(au, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
         z = z.swapaxes(1, -1)
         print(f'au.shape = {au.shape}')
         print(f'f.shape = {f.shape}')
@@ -345,8 +344,8 @@ class stft_class():
             z = np.empty(m.shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
             for i in range(0, self.GLA_n_iter):
-                t, au_re = scipy.signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
-                f, t, z = scipy.signal.stft(au_re, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+                t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
+                f, t, z = signal.stft(au_re, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
                 z = z.swapaxes(1, -1)
                 p = np.angle(z)
                 z.real, z.imag = m*np.cos(p), m*np.sin(p)   
@@ -359,7 +358,7 @@ class stft_class():
             z.real, z.imag = zr, zi
         else:
             raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
-        t, au_re = scipy.signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
+        t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
         print(f'au_re.shape = {au_re.shape}')
         return au_re
 
@@ -505,7 +504,7 @@ def get_silence(sr, du=1.0, stereo=False):
 def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
     Detect the pitch of audio (specifically piano single note) given a pitch, cent band and cent step, using discrete time fourier transform in limited frequency range.
-    The computation will be quite slow since it does not use FFT, but it's much more accurate than scipy.signal.stft in terms of frequency resolution. 
+    The computation will be quite slow since it does not use FFT, but it's much more accurate than signal.stft in terms of frequency resolution. 
     I've ensured the cpu and memory pressure won't be high by using for-loop.
     
     Parameters:
@@ -547,7 +546,7 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='hamming'):
     sr: float (Hz). Sample rate of input audio array.
     T: float (seconds). Time length of each window.
     overlap: float, proportion. Proportion of overlapping between windows.
-    win: str or tuple. The window to apply to every frame. No need to provide window size. Please refer to scipy.signal.get_windows.
+    win: str or tuple. The window to apply to every frame. No need to provide window size. Please refer to signal.get_windows.
 
     Returns
     au_f: ndarray. Framed audio with mono shape (window_num, samples) or multi-channel shape (window_num, samples_num, channels_num).
@@ -565,7 +564,7 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='hamming'):
         for i in range(1, q1):
             au_f = np.append(au_f, au[:, i*hop: i*hop+step, :], axis=0)
         if win:
-            au_f *= scipy.signal.get_window(win, step).reshape((1, step, 1))
+            au_f *= signal.get_window(win, step).reshape((1, step, 1))
         return au_f
     elif au.ndim == 1:
         q1, q2 = divmod(au.shape[0], hop)
@@ -579,7 +578,7 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='hamming'):
         for i in range(1, q1):
             au_f = np.append(au_f, au[:, i*hop: i*hop+step], axis=0)
         if win:
-            au_f *= scipy.signal.get_window(win, step).reshape((1, step))
+            au_f *= signal.get_window(win, step).reshape((1, step))
         return au_f
     else:
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
