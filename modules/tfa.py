@@ -51,6 +51,22 @@ def bqsos2(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
     sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
     return iirsos2(y, sos, axis=axis)
 
+def butter(y, sr, btype, order, freq, axis=0):
+    b, a = get_ba_butter(sr, btype, order, freq)
+    return iir(y, b, a, axis=axis)
+
+def butter2(y, sr, btype, order, freq, axis=0):
+    b, a = get_ba_butter(sr, btype, order, freq)
+    return iir2(y, b, a, axis=axis)
+
+def buttersos(y, sr, btype, order, freq, axis=0):
+    sos = get_sos_butter(sr, btype, order, freq)
+    return iirsos(y, sos, axis=axis)
+
+def buttersos2(y, sr, btype, order, freq, axis=0):
+    sos = get_sos_butter(sr, btype, order, freq)
+    return iirsos2(y, sos, axis=axis)
+
 # IIR filter frequency response
 def fr_iir(sr, b, a):
     # This returns frequency, amplitude and phase arrays.
@@ -82,7 +98,11 @@ def repeat_sos(sos, n):
     # Broadcast a sos from shape(1, 6) to shape(n, 6).
     return np.broadcast_to(sos, (n, 6))
 
-#def get_ba_
+def get_ba_butter(sr, btype, order, freq):
+    # Get the b and a parameters of a butterworth IIR filter.
+    # signal.butter
+    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
+    return signal.butter(order, freq, btype=btype, fs=sr)
 
 def get_sos_butter(sr, btype, order, freq):
     # Get the sos of a butterworth IIR filter.
