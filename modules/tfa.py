@@ -76,35 +76,36 @@ def buttersos2(y, sr, btype, order, freq, axis=0):
 # IIR filter frequency response
 # Input: filter coefficients/parameters
 # Output: frequency response (frequency, magnitude and phase arrays)
-# To avoid zero division warning and too large values, the returned magnitude array is not converted to decibels.
-# You can convert the magnitude array to decibel unit when plotting with matplotlib scale setting.
+# if delete_first == True, the first elements of output arrays will be deleted, to avoid zero division warning and log scaling problem.
 # In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
 
-def fr_iir(sr, b, a):
+def fr_iir(sr, b, a, delete_first=True):
     f, z = signal.freqz(b, a, fs=sr)
-    return f, abs(z), np.unwrap(np.angle(z))
-    #return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
+    if delete_first:
+        f, z = f[1:], z[1:]
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
-def fr_iirsos(sr, sos):
+def fr_iirsos(sr, sos, delete_first=True):
     f, z = signal.sosfreqz(sos, fs=sr)
-    return f, abs(z), np.unwrap(np.angle(z))
-    #return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
+    if delete_first:
+        f, z = f[1:], z[1:]
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
-def fr_bq(sr, bqfunc, freq, Q, gain=None):
+def fr_bq(sr, bqfunc, freq, Q, gain=None, delete_first=True):
     sos = bqfunc(sr, freq, Q, gain)
-    return fr_irrsos(sr, sos)
+    return fr_irrsos(sr, sos, delete_first=delete_first)
 
-def fr_bqsos(sr, bqfunc_list, freq_list, Q_list, gain_list=None):
+def fr_bqsos(sr, bqfunc_list, freq_list, Q_list, gain_list=None, delete_first=True):
     sos = get_sos_bq(sr, bqfunc_list, freq_list, Q_list, gain_list)
-    return fr_irrsos(sr, sos)
+    return fr_irrsos(sr, sos, delete_first=delete_first)
 
-def fr_butter(sr, btype, order, freq, axis=0):
+def fr_butter(sr, btype, order, freq, axis=0, delete_first=True):
     b, a = get_ba_butter(sr, btype, order, freq)
-    return fr_irr(sr, b, a)
+    return fr_irr(sr, b, a, delete_first=delete_first)
 
-def fr_buttersps(sr, btype, order, freq, axis=0):
+def fr_buttersps(sr, btype, order, freq, axis=0, delete_first=True):
     sos = get_sos_butter(sr, btype, order, freq)
-    return fr_irrsos(sr, sos)
+    return fr_irrsos(sr, sos, delete_first=delete_first)
 
 # IIR filter coefficient
 # Input: filter parameters
