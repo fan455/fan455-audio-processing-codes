@@ -78,7 +78,46 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, xlab
         fig.suptitle(title)
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
-    plt.show()    
+    plt.show()
+
+def plot_scale(y, x, xscale='log', yscale=None, xscale_kwargs=None, yscale_kwargs=None, \
+               title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5', **kwargs):
+    # The type of xscale_kwargs and yscale_kwargs is "dict".
+    # Please refer to "matplotlib.scale".
+    # xscale or yscale: 'asinh', 'function', 'functionlog', 'linear', 'log', 'logit', 'symlog'
+    fig, ax = plt.subplots(facecolor=bgcolor)
+    ax.set_facecolor(bgcolor)
+    if xscale is not None:
+        ax.set_xscale(xscale, **xscale_kwargs)
+    if yscale is not None:
+        ax.set_yscale(yscale, **yscale_kwargs)
+    ax.plot(x, y, **kwargs)
+    plt.title(title)
+    plt.xlabel(xlabel, loc='right')
+    plt.ylabel(ylabel, loc='center')
+    if grid:
+        ax.grid(color='grey', linewidth='1', linestyle='-.')
+    plt.show()
+
+def get_fscale(base=10, linthresh=10, linscale=10, subs=None):
+    # Frequency scale parameters for plotting frequency response, to be used in "plot_scale()".
+    # Please refer to "matplotlib.scale.SymmetricalLogScale"
+    # Returns: xscale, xscale_kwargs
+    return 'symlog', dict(base=base, linthresh=linthresh, subs=subs, linscale=linscale)
+
+def plot_fr(fr, f, grid=True, bgcolor='#D1DDC5', **kwargs):
+    # plot frequency response - magnitude.
+    fig, ax = plt.subplots(facecolor=bgcolor)
+    ax.set_facecolor(bgcolor)
+    ax.set_xscale('symlog', linthresh=10, linscale=10)
+    ax.set_yscale('function', functions=())
+    ax.plot(f, frm, **kwargs)
+    plt.title(title)
+    plt.xlabel(xlabel, loc='right')
+    plt.ylabel(ylabel, loc='center')
+    if grid:
+        ax.grid(color='grey', linewidth='1', linestyle='-.')
+    plt.show()
                 
 def plot_modes(Modes, t, au=None, res=None, compare_with_noise=True, title=None, xlabel='time', ylabel='magnitude', grid=False, bgcolor='#D1DDC5', **kwargs):
     assert Modes.shape[1] == t.size
