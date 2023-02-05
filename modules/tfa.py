@@ -5,10 +5,11 @@ import numpy as np
 from scipy import fft, signal
 
 # IIR filter
-# Input: signal and filter coefficients/parameters,
+# Input: signal and filter coefficients/parameters
 # Output: filtered signal
 # Funtions with "sos" uses second-order sections for numerical stability.
 # Funtions with "2" uses fordward-backward filtering to realize zero phase.
+
 def iir(y, b, a, axis=0):
     return signal.lfilter(b, a, y, axis=axis)
 
@@ -21,14 +22,15 @@ def iirsos(y, sos, axis=0):
 def iirsos2(y, sos, axis=0):
     return signal.sosfiltfilt(sos, y, axis=axis)
 
-def bq(y, sr, bqtype, freq, Q, gain=None, axis=0):
+def bq(y, sr, bqfunc, freq, Q, gain=None, axis=0):
     """
     Single biquad filter
 
     Parameters:
     y: ndarray. The signal to be filtered.
     sr: positive int (Hz). Sample rate of y.
-    bqtype: function. Please refer to the "IIR filter coefficient" section.
+    bqfunc: function. Which function to use to get the sos coefficients of biquad filter,
+        e.g. bq_lowpass. Please refer to the "IIR filter coefficient" section.
     freq: positive float. The "significant frequency".
     Q: positive float. Quality factor.
     gain: float (dB). For peak, low shelf and high shelf filters only.
@@ -37,20 +39,20 @@ def bq(y, sr, bqtype, freq, Q, gain=None, axis=0):
     Returns:
     y_filtered: ndarray. Filtered signal.
     """
-    sos = bqtype(sr, freq, Q, gain)
+    sos = bqfunc(sr, freq, Q, gain)
     return iirsos(y, sos, axis=axis)
 
-def bq2(y, sr, bqtype, freq, Q, gain=None, axis=0):
-    sos = bqtype(sr, freq, Q, gain)
+def bq2(y, sr, bqfunc, freq, Q, gain=None, axis=0):
+    sos = bqfunc(sr, freq, Q, gain)
     return iirsos2(y, sos, axis=axis)
 
-def bqsos(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
+def bqsos(y, sr, bqfunc_list, freq_list, Q_list, gain_list=None, axis=0):
     # Cascaded-sos biquad filter, with list inputs.
-    sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
+    sos = get_sos_bq(sr, bqfunc_list, freq_list, Q_list, gain_list)
     return iirsos(y, sos, axis=axis)
 
-def bqsos2(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
-    sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
+def bqsos2(y, sr, bqfunc_list, freq_list, Q_list, gain_list=None, axis=0):
+    sos = get_sos_bq(sr, bqfunc_list, freq_list, Q_list, gain_list)
     return iirsos2(y, sos, axis=axis)
 
 def butter(y, sr, btype, order, freq, axis=0):
@@ -75,6 +77,7 @@ def buttersos2(y, sr, btype, order, freq, axis=0):
 # Input: filter coefficients/parameters
 # Output: frequency response (frequency, amplitude and phase arrays)
 # In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
+
 def fr_iir(sr, b, a):
     f, z = signal.freqz(b, a, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
@@ -83,12 +86,12 @@ def fr_iirsos(sr, sos):
     f, z = signal.sosfreqz(sos, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
-def fr_bq(sr, bqtype, freq, Q, gain=None):
-    sos = bqtype(sr, freq, Q, gain)
+def fr_bq(sr, bqfunc, freq, Q, gain=None):
+    sos = bqfunc(sr, freq, Q, gain)
     return fr_irrsos(sr, sos)
 
-def fr_bqsos(sr, bqtype_list, freq_list, Q_list, gain_list=None):
-    sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
+def fr_bqsos(sr, bqfunc_list, freq_list, Q_list, gain_list=None):
+    sos = get_sos_bq(sr, bqfunc_list, freq_list, Q_list, gain_list)
     return fr_irrsos(sr, sos)
 
 def fr_butter(sr, btype, order, freq, axis=0):
@@ -103,6 +106,7 @@ def fr_buttersps(sr, btype, order, freq, axis=0):
 # Input: filter parameters
 # Output: filter coefficients)
 # Reference: Audio EQ Cookbook (W3C Working Group Note, 08 June 2021)
+
 def cascade_sos(sos_list):
     # input sos list (or tuple): [sos1, sos2,..., sosn]
     return np.concatenate(sos_list, axis=0)
@@ -131,7 +135,7 @@ def get_sos_iir(sr, ftype, btype, order, freq, rp=None, rs=None):
     return signal.iirfilter(order, freq, rp=rp, rs=rs, btype=btype, \
                             ftype=ftype, output='sos', fs=sr)
 
-def get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list=None):
+def get_sos_bq(sr, bqfunc_list, freq_list, Q_list, gain_list=None):
     # Get the sos coefficient array of cascaded biquad filters.
     # Returned sos array shape is (number of sos, 6).
     # The length of input lists (should be the same) is the number of sos.
@@ -140,11 +144,11 @@ def get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list=None):
         gain_list = [None]*nsos
     sos = np.empty((0, 6))
     for i in range(nsos):
-        bqtype = bqtype_list[i]
+        bqfunc = bqfunc_list[i]
         freq = freq_list[i]
         Q = Q_list[i]
         gain = gain_list[i]
-        sos_ = bqtype(sr, freq, Q, gain)
+        sos_ = bqfunc(sr, freq, Q, gain)
         sos = np.append(sos, sos_, axis=0)
     return sos
 
