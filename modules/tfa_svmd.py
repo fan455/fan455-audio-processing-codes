@@ -23,7 +23,7 @@ archivePrefix = {arXiv},
 
 import timeit
 import numpy as np
-from scipy import fft
+import scipy.fft
 
 def abs2(x):
     # Avoid square root calculation.
@@ -64,7 +64,7 @@ def svmd(y, sr, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alph
     print(f'input_size_is_odd = {input_size_is_odd}', '\n')
 
     print('Decomposition information:')
-    z = 2*fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
+    z = 2*scipy.fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
     print(f'z.size = {z.size}', '\n')
     f = np.arange(z.size)
     Modes = []
@@ -95,7 +95,7 @@ def svmd(y, sr, out_thr=1e-5, in_thr=1e-10, out_iter_max=9, in_iter_max=50, alph
     print(f'Totally {k} modes extracted (excluding residual).')
     Modes.append(z)
     Modes = np.append(np.array(Modes), np.zeros((k+1, y_size//2)), axis=1)
-    Modes = np.real(fft.ifft(Modes, axis=1, norm='backward')) # transform output back to time domain.
+    Modes = np.real(scipy.fft.ifft(Modes, axis=1, norm='backward')) # transform output back to time domain.
     if not input_size_is_odd:
         Modes = np.delete(Modes, -1, axis=1) # delete the last element of output to compensate.
     print('The last element of output is deleted because input size is even.', '\n')
@@ -136,7 +136,7 @@ def svmd_refined(y, sr, nmode, merge_range=1.5, out_thr=1e-5, in_thr=1e-10, out_
     print(f'input_size_is_odd = {input_size_is_odd}', '\n')
 
     print('Decomposition information:')
-    z = 2*fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
+    z = 2*scipy.fft.rfft(y, axis=0, norm='backward') # transform input to frequency domain. z represents complex.
     print(f'z.size = {z.size}', '\n')
     f = np.arange(z.size)
     Modes, Fc, Distances = [], [], []
@@ -168,7 +168,7 @@ def svmd_refined(y, sr, nmode, merge_range=1.5, out_thr=1e-5, in_thr=1e-10, out_
     print(f'Totally {k} modes extracted (excluding residual).')
     Modes.append(z)
     Modes = np.append(np.array(Modes), np.zeros((k+1, y_size//2)), axis=1)
-    Modes = np.real(fft.ifft(Modes, axis=1, norm='backward')) # transform output back to time domain.
+    Modes = np.real(scipy.fft.ifft(Modes, axis=1, norm='backward')) # transform output back to time domain.
     if not input_size_is_odd:
         Modes = np.delete(Modes, -1, axis=1) # delete the last element of output to compensate.
     print('The last element of output is deleted because input size is even.', '\n')
