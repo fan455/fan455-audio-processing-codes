@@ -2,14 +2,15 @@
 Audio Time-Frequency Analysis
 """
 import numpy as np
-from scipy import fft, signal
+import scipy.fft
+import scipy.signal
 
 # IIR filter
 def iir(y, b, a, axis=0):
-    return signal.lfilter(b, a, y, axis=axis)
+    return scipy.signal.lfilter(b, a, y, axis=axis)
 
 def iirsos(y, sos, axis=0):
-    return signal.sosfilt(sos, y, axis=axis)
+    return scipy.signal.sosfilt(sos, y, axis=axis)
 
 def bq(y, sr, bqtype, freq, Q, gain=None, axis=0):
     """
@@ -38,12 +39,12 @@ def bqsos(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
 # IIR filter frequency response
 def fr_irr(sr, b, a):
     # This returns frequency, amplitude and phase arrays.
-    f, z = signal.freqz(b, a, fs=sr)
+    f, z = scipy.signal.freqz(b, a, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
 def fr_irrsos(sr, sos):
     # This returns frequency, amplitude and phase arrays.
-    f, z = signal.sosfreqz(sos, fs=sr)
+    f, z = scipy.signal.sosfreqz(sos, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
 def fr_bq(sr, bqtype, freq, Q, gain=None):
@@ -58,6 +59,28 @@ def fr_bqsos(sr, bqtype_list, freq_list, Q_list, gain_list=None):
 
 # IIR filter coefficient
 # Reference: Audio EQ Cookbook (W3C Working Group Note, 08 June 2021)
+def cascade_sos(sos_list):
+    # input sos list (or tuple): [sos1, sos2,..., sosn]
+    return np.concatenate(sos_list, axis=0)
+
+def repeat_sos(sos, n):
+    # Broadcast a sos from shape(1, 6) to shape(n, 6).
+    return np.broadcast_to(sos, (n, 6))
+
+def get_sos_butter(sr, btype, order, freq):
+    # Get the sos of a butterworth IIR filter.
+    # scipy.signal.butter
+    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
+    return scipy.signal.butter(order, freq, btype=btype, output='sos', fs=sr)
+
+def get_sos_iir(sr, ftype, btype, order, freq, rp=None, rs=None):
+    # Get the sos of certain types of IRR filter.
+    # scipy.signal.iirfilter
+    # ftype: 'butter', 'cheby1', 'cheby2', 'ellip', 'bessel'
+    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
+    return scipy.signal.iirfilter(order, freq, rp=rp, rs=rs, btype=btype, \
+                                  ftype=ftype, output='sos', fs=sr)
+
 def get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list=None):
     # Get the sos coefficient array of cascaded biquad filters.
     # Returned sos array shape is (number of sos, 6).
@@ -75,7 +98,7 @@ def get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list=None):
         sos = np.append(sos, sos_, axis=0)
     return sos
 
-def bq_apf(sr, freq, Q, gain=None):
+def bq_allpass(sr, freq, Q, gain=None):
     # biquad all pass filter
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
@@ -85,7 +108,7 @@ def bq_apf(sr, freq, Q, gain=None):
     a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
     return np.array([np.append(b, a)])
         
-def bq_lpf(sr, freq, Q, gain=None):
+def bq_lowpass(sr, freq, Q, gain=None):
     # biquad low pass filter
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
@@ -95,7 +118,7 @@ def bq_lpf(sr, freq, Q, gain=None):
     a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
     return np.array([np.append(b, a)])
 
-def bq_hpf(sr, freq, Q, gain=None):
+def bq_highpass(sr, freq, Q, gain=None):
     # biquad high pass filter
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
@@ -105,7 +128,7 @@ def bq_hpf(sr, freq, Q, gain=None):
     a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
     return np.array([np.append(b, a)])
 
-def bq_bpf(sr, freq, Q, gain=None):
+def bq_bandpass(sr, freq, Q, gain=None):
     # biquad band pass filter with constant 0 dB peak gain.
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
@@ -115,7 +138,7 @@ def bq_bpf(sr, freq, Q, gain=None):
     a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
     return np.array([np.append(b, a)])
 
-def bq_bpf2(sr, freq, Q, gain=None):
+def bq_bandpass2(sr, freq, Q, gain=None):
     # biquad band pass filter with constant Q dB peak gain.
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
@@ -125,8 +148,8 @@ def bq_bpf2(sr, freq, Q, gain=None):
     a = np.array([1.0, -2*cosw/norm, (1-alpha)/norm])
     return np.array([np.append(b, a)])
 
-def bq_notch(sr, freq, Q, gain=None):
-    # biquad notch filter
+def bq_bandstop(sr, freq, Q, gain=None):
+    # biquad band stop (notch) filter
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
     alpha = 0.5*sinw/Q
@@ -136,7 +159,7 @@ def bq_notch(sr, freq, Q, gain=None):
     return np.array([np.append(b, a)])
     
 def bq_peak(sr, freq, Q, gain):
-    # biquad peaking EQ
+    # biquad peaking (bell) EQ
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
     alpha = 0.5*sinw/Q
@@ -146,7 +169,7 @@ def bq_peak(sr, freq, Q, gain):
     a = np.array([1.0, -2*cosw/norm, (1-alpha/A)/norm])
     return np.array([np.append(b, a)])
 
-def bq_ls(sr, freq, Q, gain):
+def bq_lowshelf(sr, freq, Q, gain):
     # biquad low shelf
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
@@ -162,7 +185,7 @@ def bq_ls(sr, freq, Q, gain):
     a = A*np.array([1.0, a1/norm, a2/norm])
     return np.array([np.append(b, a)])
 
-def bq_hs(sr, freq, Q, gain):
+def bq_highshelf(sr, freq, Q, gain):
     # biquad high shelf
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
@@ -181,48 +204,48 @@ def bq_hs(sr, freq, Q, gain):
 # Time-frequency transform
 def fftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
-    return np.abs(fft.fft(y, axis=axis, norm='backward'))
+    return np.abs(scipy.fft.fft(y, axis=axis, norm='backward'))
 
 def rfftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
-    return np.abs(fft.rfft(y, axis=axis, norm='backward'))
+    return np.abs(scipy.fft.rfft(y, axis=axis, norm='backward'))
 
 def rfftmf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
-    y_rfftm = np.abs(fft.rfft(y, axis=axis, norm='backward'))
-    y_rfftf = fft.fftfreq(y.size, d=1/sr)
+    y_rfftm = np.abs(scipy.fft.rfft(y, axis=axis, norm='backward'))
+    y_rfftf = scipy.fft.fftfreq(y.size, d=1/sr)
     return y_rfftm, y_rfftf
 
 def fft(y, axis=-1):
-    return fft.fft(y, axis=axis, norm='backward')
+    return scipy.fft.fft(y, axis=axis, norm='backward')
 
 def ifft(y_fft, axis=-1):
-    return fft.ifft(y_fft, axis=axis, norm='backward')
+    return scipy.fft.ifft(y_fft, axis=axis, norm='backward')
 
 def rfft(y, axis=-1):
-    return fft.rfft(y, axis=axis, norm='backward')
+    return scipy.fft.rfft(y, axis=axis, norm='backward')
 
 def irfft(y_rfft, axis=-1):
-    return fft.irfft(y_rfft, axis=axis, norm='backward')
+    return scipy.fft.irfft(y_rfft, axis=axis, norm='backward')
 
 def dct(y, axis=-1, dct_type=2):
-    return fft.dct(au, dct_type, axis=axis, norm='backward')
+    return scipy.fft.dct(au, dct_type, axis=axis, norm='backward')
 
 def idct(y_dct, axis=-1, dct_type=2):
-    return fft.idct(y_dct, dct_type, axis=axis, norm='backward')
+    return scipy.fft.idct(y_dct, dct_type, axis=axis, norm='backward')
 
 def hilbert(y, axis=-1):
-    return signal.hilbert(y, axis=axis)
+    return scipy.signal.hilbert(y, axis=axis)
 
 def hilbert_ap(y, axis=-1):
     # This returns (am, pm), the instaneous amplitude and phase arrays.
-    ya = signal.hilbert(y, axis=axis)
+    ya = scipy.signal.hilbert(y, axis=axis)
     return np.abs(ya), np.unwrap(np.angle(ya))
 
 def hilbert_af(y, sr, axis=-1):
     # This returns (am, fm), the instaneous amplitude and frequency arrays.
     # The length of the fm array is reduced by one.
-    ya = signal.hilbert(y, axis=axis)
+    ya = scipy.signal.hilbert(y, axis=axis)
     am = np.abs(ya)
     if y.ndim == 2:
         if axis == -1 or axis == 1:
@@ -278,7 +301,7 @@ class stft_class():
         z: if self.fft_type='z'. The complex array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         zr, zi: if self.fft_type='zr, zi'. The complex array' real array and imaginary array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]).
         """
-        f, t, z = signal.stft(au, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+        f, t, z = scipy.signal.stft(au, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
         z = z.swapaxes(1, -1)
         print(f'au.shape = {au.shape}')
         print(f'f.shape = {f.shape}')
@@ -322,8 +345,8 @@ class stft_class():
             z = np.empty(m.shape, dtype=np.complex128)
             z.real, z.imag = m*np.cos(p), m*np.sin(p)
             for i in range(0, self.GLA_n_iter):
-                t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
-                f, t, z = signal.stft(au_re, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+                t, au_re = scipy.signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
+                f, t, z = scipy.signal.stft(au_re, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
                 z = z.swapaxes(1, -1)
                 p = np.angle(z)
                 z.real, z.imag = m*np.cos(p), m*np.sin(p)   
@@ -336,7 +359,7 @@ class stft_class():
             z.real, z.imag = zr, zi
         else:
             raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
-        t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
+        t, au_re = scipy.signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
         print(f'au_re.shape = {au_re.shape}')
         return au_re
 
@@ -479,17 +502,6 @@ def get_silence(sr, du=1.0, stereo=False):
         return np.zeros((size, 2))
 
 # Others
-def get_idx_array(y):
-    return np.arange(y.size)
-
-def sample2time(n, sr):
-    # start from 0
-    return n/sr
-
-def time2sample(t, sr):
-    # start from 0
-    return (sr*t).astype(np.int64)
-
 def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
     Detect the pitch of audio (specifically piano single note) given a pitch, cent band and cent step, using discrete time fourier transform in limited frequency range.
@@ -517,7 +529,7 @@ def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1
         t_size = int(sr*du)
     au = au[0: t_size]
     t = np.arange(0, t_size)/sr
-    F = given_freq*cent2ratio(np.arange(-given_cent, given_cent+1, cent_step))
+    F = given_freq*np.exp2(np.arange(-given_cent, given_cent+1, cent_step)/1200)
     F_size = F.size
     M = np.empty(0)
     for i in range(0, F_size):
@@ -553,7 +565,7 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='hamming'):
         for i in range(1, q1):
             au_f = np.append(au_f, au[:, i*hop: i*hop+step, :], axis=0)
         if win:
-            au_f *= signal.get_window(win, step).reshape((1, step, 1))
+            au_f *= scipy.signal.get_window(win, step).reshape((1, step, 1))
         return au_f
     elif au.ndim == 1:
         q1, q2 = divmod(au.shape[0], hop)
@@ -567,7 +579,7 @@ def get_framed(au, sr, T=0.4, overlap=0.75, win='hamming'):
         for i in range(1, q1):
             au_f = np.append(au_f, au[:, i*hop: i*hop+step], axis=0)
         if win:
-            au_f *= signal.get_window(win, step).reshape((1, step))
+            au_f *= scipy.signal.get_window(win, step).reshape((1, step))
         return au_f
     else:
         raise ValueError(f'au.ndim = {au.ndim} is not supported.')
