@@ -85,15 +85,22 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
 
 def plot_scale(y, x, xscale='log', yscale=None, xscale_kwargs=None, yscale_kwargs=None, \
                title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5', **kwargs):
-    # The type of xscale_kwargs and yscale_kwargs is "dict".
+    # Plot with x and/or y axis scaled. By default x is scaled by "log10".
+    # The types of xscale_kwargs and yscale_kwargs should be "dict", so use the "dict()" function.
     # Please refer to "matplotlib.scale".
     # xscale or yscale: 'asinh', 'function', 'functionlog', 'linear', 'log', 'logit', 'symlog'
     fig, ax = plt.subplots(facecolor=bgcolor)
     ax.set_facecolor(bgcolor)
     if xscale is not None:
-        ax.set_xscale(xscale, **xscale_kwargs)
+        if xscale_kwargs is None:
+            ax.set_xscale(xscale)
+        else:
+            ax.set_xscale(xscale, **xscale_kwargs)
     if yscale is not None:
-        ax.set_yscale(yscale, **yscale_kwargs)
+        if yscale_kwargs is None:
+            ax.set_yscale(yscale)
+        else:
+            ax.set_yscale(yscale, **yscale_kwargs)
     ax.plot(x, y, **kwargs)
     plt.title(title)
     plt.xlabel(xlabel, loc='right')
@@ -123,7 +130,7 @@ def plot_frm(frm, f, base=10, linthresh=10, linscale=10, subs=None, \
 
 def plot_frp(frp, f, base=10, linthresh=10, linscale=10, subs=None, \
              delete_zero=False, grid=True, bgcolor='#D1DDC5', **kwargs):
-    # Plot frequency response: magnitude.
+    # Plot frequency response: phase.
     # base, linthresh linscale and subs are keyword arguments for 'matplotlib.scale.SymmetricalLogScale'.
     # In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
     if delete_zero:
