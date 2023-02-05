@@ -75,16 +75,20 @@ def buttersos2(y, sr, btype, order, freq, axis=0):
 
 # IIR filter frequency response
 # Input: filter coefficients/parameters
-# Output: frequency response (frequency, amplitude and phase arrays)
+# Output: frequency response (frequency, magnitude and phase arrays)
+# To avoid zero division warning and too large values, the returned magnitude array is not converted to decibels.
+# You can convert the magnitude array to decibel unit when plotting with matplotlib scale setting.
 # In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
 
 def fr_iir(sr, b, a):
     f, z = signal.freqz(b, a, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
+    return f, abs(z), np.unwrap(np.angle(z))
+    #return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
 def fr_iirsos(sr, sos):
     f, z = signal.sosfreqz(sos, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
+    return f, abs(z), np.unwrap(np.angle(z))
+    #return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
 def fr_bq(sr, bqfunc, freq, Q, gain=None):
     sos = bqfunc(sr, freq, Q, gain)
