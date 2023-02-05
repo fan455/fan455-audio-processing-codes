@@ -45,13 +45,13 @@ def bq2(y, sr, bqfunc, freq, Q, gain=None, axis=0):
     sos = bqfunc(sr, freq, Q, gain)
     return iirsos2(y, sos, axis=axis)
 
-def bqsos(y, sr, bqfunc_list, freq_list, Q_list, gain_list=None, axis=0):
+def bqcas(y, sr, bqfunc_list, freq_list, Q_list, gain_list=None, axis=0):
     # Cascaded-sos biquad filter, with list inputs.
-    sos = get_sos_bq(sr, bqfunc_list, freq_list, Q_list, gain_list)
+    sos = get_sos_bqcas(sr, bqfunc_list, freq_list, Q_list, gain_list)
     return iirsos(y, sos, axis=axis)
 
-def bqsos2(y, sr, bqfunc_list, freq_list, Q_list, gain_list=None, axis=0):
-    sos = get_sos_bq(sr, bqfunc_list, freq_list, Q_list, gain_list)
+def bqcas2(y, sr, bqfunc_list, freq_list, Q_list, gain_list=None, axis=0):
+    sos = get_sos_bqcas(sr, bqfunc_list, freq_list, Q_list, gain_list)
     return iirsos2(y, sos, axis=axis)
 
 def butter(y, sr, btype, order, freq, axis=0):
@@ -134,7 +134,11 @@ def get_sos_iir(sr, ftype, btype, order, freq, rp=None, rs=None):
     return signal.iirfilter(order, freq, rp=rp, rs=rs, btype=btype, \
                             ftype=ftype, output='sos', fs=sr)
 
-def get_sos_bq(sr, bqfunc_list, freq_list, Q_list, gain_list=None):
+def get_sos_bq(sr, bqfunc, freq, Q, gain=None):
+    # Get the sos coefficient array of a single biquad filter.
+    return bqfunc(sr, freq, Q, gain)
+
+def get_sos_bqcas(sr, bqfunc_list, freq_list, Q_list, gain_list=None):
     # Get the sos coefficient array of cascaded biquad filters.
     # Returned sos array shape is (number of sos, 6).
     # The length of input lists (should be the same) is the number of sos.
