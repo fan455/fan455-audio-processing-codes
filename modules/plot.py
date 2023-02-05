@@ -20,32 +20,7 @@ def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#
     if grid:
         ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
-
-def plot_xint(y, x=None, title='title', xlabel='x', ylabel='y', \
-              grid=True, annotate_x=False, bgcolor='#D1DDC5'):
-    """
-    x, y: 1d arrays with the same size.
-    """
-    fig, ax = plt.subplots(facecolor=bgcolor)
-    ax.set_facecolor(bgcolor)
-    if x is None:
-        x = np.arange(y.size)
-    else:
-        assert x.dtype == int
-    ax.plot(x, y, color='tab:grey', linestyle='--', \
-            marker='.', markersize=12.0, mec='black', mfc='black')
-    if annotate_x:
-        for i in range(x.size):
-            plt.annotate(f'{x[i]}', (x[i], y[i]), fontsize='small')
-    else:
-        pass
-    plt.title(title)
-    plt.xlabel(xlabel, loc='right')
-    plt.ylabel(ylabel, loc='center')
-    if grid:
-        ax.grid(color='grey', linewidth='1', linestyle='-.')
-    plt.show()
-    
+  
 def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
              xlabel='x', ylabel='y', grid=False, bgcolor='#D1DDC5', **kwargs):
     assert x.ndim == 1 and y.ndim == 2
@@ -83,6 +58,31 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
     plt.ylabel(ylabel, loc='center')
     plt.show()
 
+def plot_xint(y, x=None, title='title', xlabel='x', ylabel='y', \
+              grid=True, annotate_x=False, bgcolor='#D1DDC5'):
+    """
+    x, y: 1d arrays with the same size.
+    """
+    fig, ax = plt.subplots(facecolor=bgcolor)
+    ax.set_facecolor(bgcolor)
+    if x is None:
+        x = np.arange(y.size)
+    else:
+        assert x.dtype == int
+    ax.plot(x, y, color='tab:grey', linestyle='--', \
+            marker='.', markersize=12.0, mec='black', mfc='black')
+    if annotate_x:
+        for i in range(x.size):
+            plt.annotate(f'{x[i]}', (x[i], y[i]), fontsize='small')
+    else:
+        pass
+    plt.title(title)
+    plt.xlabel(xlabel, loc='right')
+    plt.ylabel(ylabel, loc='center')
+    if grid:
+        ax.grid(color='grey', linewidth='1', linestyle='-.')
+    plt.show()
+  
 def plot_scale(y, x, xscale='log', yscale=None, xscale_kwargs=None, yscale_kwargs=None, \
                title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5', **kwargs):
     # Plot with x and/or y axis scaled. By default x is scaled by "log10".
@@ -113,6 +113,7 @@ def plot_frm(frm, f, base=10, linthresh=10, linscale=10, subs=None, \
              delete_zero=True, grid=True, bgcolor='#D1DDC5', **kwargs):
     # Plot frequency response: magnitude.
     # base, linthresh linscale and subs are keyword arguments for 'matplotlib.scale.SymmetricalLogScale'.
+    # delete_zero=True may avoid bumpy's zero division warning.
     # In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
     if delete_zero:
         frm, f = frm[1:], f[1:]
@@ -122,8 +123,8 @@ def plot_frm(frm, f, base=10, linthresh=10, linscale=10, subs=None, \
     ax.set_xscale('symlog', base=base, linthresh=linthresh, subs=subs, linscale=linscale)
     ax.plot(f, frm, **kwargs)
     plt.title('frequency response: magnitude')
-    plt.xlabel(xlabel, loc='frequency (Hz)')
-    plt.ylabel(ylabel, loc='magnitude (dB)')
+    plt.xlabel('frequency (Hz)', loc='right')
+    plt.ylabel('magnitude (dB)', loc='center')
     if grid:
         ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
@@ -140,8 +141,8 @@ def plot_frp(frp, f, base=10, linthresh=10, linscale=10, subs=None, \
     ax.set_xscale('symlog', base=base, linthresh=linthresh, subs=subs, linscale=linscale)
     ax.plot(f, frp, **kwargs)
     plt.title('frequency response: phase')
-    plt.xlabel(xlabel, loc='frequency (Hz)')
-    plt.ylabel(ylabel, loc='phase (rad)')
+    plt.xlabel('frequency (Hz)', loc='right')
+    plt.ylabel('phase (rad)', loc='center')
     if grid:
         ax.grid(color='grey', linewidth='1', linestyle='-.')
     plt.show()
