@@ -196,7 +196,7 @@ def rfftmf(y, sr, axis=-1):
 def fft(y, axis=-1):
     return fft.fft(y, axis=axis, norm='backward')
 
-def get_ifft(y_fft, axis=-1):
+def ifft(y_fft, axis=-1):
     return fft.ifft(y_fft, axis=axis, norm='backward')
 
 def rfft(y, axis=-1):
