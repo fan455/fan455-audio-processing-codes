@@ -8,8 +8,16 @@ from scipy import fft, signal
 def iir(y, b, a, axis=0):
     return signal.lfilter(b, a, y, axis=axis)
 
+def iir2(y, b, a, axis=0):
+    # fordward-backward filtering, zero phase
+    return signal.filtfilt(b, a, y, axis=axis)
+
 def iirsos(y, sos, axis=0):
     return signal.sosfilt(sos, y, axis=axis)
+
+def iirsos2(y, sos, axis=0):
+    # fordward-backward filtering, zero phase
+    return signal.sosfiltfilt(sos, y, axis=axis)
 
 def bq(y, sr, bqtype, freq, Q, gain=None, axis=0):
     """
@@ -30,18 +38,26 @@ def bq(y, sr, bqtype, freq, Q, gain=None, axis=0):
     sos = bqtype(sr, freq, Q, gain)
     return iirsos(y, sos, axis=axis)
 
+def bq2(y, sr, bqtype, freq, Q, gain=None, axis=0):
+    sos = bqtype(sr, freq, Q, gain)
+    return iirsos2(y, sos, axis=axis)
+
 def bqsos(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
     # Cascaded-sos biquad filter, with list inputs.
     sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
     return iirsos(y, sos, axis=axis)
 
+def bqsos2(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
+    sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
+    return iirsos2(y, sos, axis=axis)
+
 # IIR filter frequency response
-def fr_irr(sr, b, a):
+def fr_iir(sr, b, a):
     # This returns frequency, amplitude and phase arrays.
     f, z = signal.freqz(b, a, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
-def fr_irrsos(sr, sos):
+def fr_iirsos(sr, sos):
     # This returns frequency, amplitude and phase arrays.
     f, z = signal.sosfreqz(sos, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
@@ -66,6 +82,8 @@ def repeat_sos(sos, n):
     # Broadcast a sos from shape(1, 6) to shape(n, 6).
     return np.broadcast_to(sos, (n, 6))
 
+#def get_ba_
+
 def get_sos_butter(sr, btype, order, freq):
     # Get the sos of a butterworth IIR filter.
     # signal.butter
@@ -78,7 +96,7 @@ def get_sos_iir(sr, ftype, btype, order, freq, rp=None, rs=None):
     # ftype: 'butter', 'cheby1', 'cheby2', 'ellip', 'bessel'
     # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
     return signal.iirfilter(order, freq, rp=rp, rs=rs, btype=btype, \
-                                  ftype=ftype, output='sos', fs=sr)
+                            ftype=ftype, output='sos', fs=sr)
 
 def get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list=None):
     # Get the sos coefficient array of cascaded biquad filters.
