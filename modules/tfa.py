@@ -52,6 +52,8 @@ def bqsos2(y, sr, bqtype_list, freq_list, Q_list, gain_list=None, axis=0):
     return iirsos2(y, sos, axis=axis)
 
 def butter(y, sr, btype, order, freq, axis=0):
+    # N (lp or hp) or 2*N (bp or bs) -order Butterworth filter
+    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
     b, a = get_ba_butter(sr, btype, order, freq)
     return iir(y, b, a, axis=axis)
 
@@ -68,24 +70,30 @@ def buttersos2(y, sr, btype, order, freq, axis=0):
     return iirsos2(y, sos, axis=axis)
 
 # IIR filter frequency response
+# These functions return frequency, amplitude and phase arrays.
+# In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
 def fr_iir(sr, b, a):
-    # This returns frequency, amplitude and phase arrays.
     f, z = signal.freqz(b, a, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
 def fr_iirsos(sr, sos):
-    # This returns frequency, amplitude and phase arrays.
     f, z = signal.sosfreqz(sos, fs=sr)
     return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
 
 def fr_bq(sr, bqtype, freq, Q, gain=None):
-    # This returns frequency, amplitude and phase arrays.
     sos = bqtype(sr, freq, Q, gain)
     return fr_irrsos(sr, sos)
 
 def fr_bqsos(sr, bqtype_list, freq_list, Q_list, gain_list=None):
-    # This returns frequency, amplitude and phase arrays.
     sos = get_sos_bq(sr, bqtype_list, freq_list, Q_list, gain_list)
+    return fr_irrsos(sr, sos)
+
+def fr_butter(sr, btype, order, freq, axis=0):
+    b, a = get_ba_butter(sr, btype, order, freq)
+    return fr_irr(sr, b, a)
+
+def fr_buttersps(sr, btype, order, freq, axis=0):
+    sos = get_sos_butter(sr, btype, order, freq)
     return fr_irrsos(sr, sos)
 
 # IIR filter coefficient
