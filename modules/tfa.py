@@ -5,18 +5,20 @@ import numpy as np
 from scipy import fft, signal
 
 # IIR filter
+# Input: signal and filter coefficients/parameters,
+# Output: filtered signal
+# Funtions with "sos" uses second-order sections for numerical stability.
+# Funtions with "2" uses fordward-backward filtering to realize zero phase.
 def iir(y, b, a, axis=0):
     return signal.lfilter(b, a, y, axis=axis)
 
 def iir2(y, b, a, axis=0):
-    # fordward-backward filtering, zero phase
     return signal.filtfilt(b, a, y, axis=axis)
 
 def iirsos(y, sos, axis=0):
     return signal.sosfilt(sos, y, axis=axis)
 
 def iirsos2(y, sos, axis=0):
-    # fordward-backward filtering, zero phase
     return signal.sosfiltfilt(sos, y, axis=axis)
 
 def bq(y, sr, bqtype, freq, Q, gain=None, axis=0):
@@ -70,7 +72,8 @@ def buttersos2(y, sr, btype, order, freq, axis=0):
     return iirsos2(y, sos, axis=axis)
 
 # IIR filter frequency response
-# These functions return frequency, amplitude and phase arrays.
+# Input: filter coefficients/parameters
+# Output: frequency response (frequency, amplitude and phase arrays)
 # In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
 def fr_iir(sr, b, a):
     f, z = signal.freqz(b, a, fs=sr)
@@ -97,6 +100,8 @@ def fr_buttersps(sr, btype, order, freq, axis=0):
     return fr_irrsos(sr, sos)
 
 # IIR filter coefficient
+# Input: filter parameters
+# Output: filter coefficients)
 # Reference: Audio EQ Cookbook (W3C Working Group Note, 08 June 2021)
 def cascade_sos(sos_list):
     # input sos list (or tuple): [sos1, sos2,..., sosn]
@@ -313,7 +318,7 @@ def get_ihilbert_ap(am, pm):
     return am*np.cos(pm) 
 
 class stft_class():
-
+    # STFT and ISTFT using python's class.
     def __init__(self, sr, T=0.025, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
         """
         Parameters:
