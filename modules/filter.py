@@ -234,8 +234,8 @@ def bq_lowshelf(sr, freq, Q, gain):
     b2 = A*((A+1) - (A-1)*cosw - 2*np.sqrt(A)*alpha)
     a1 = -2*((A-1) + (A+1)*cosw)
     a2 = (A+1) + (A-1)*cosw - 2*np.sqrt(A)*alpha
-    b = A*np.array([b0, b1, b2])/norm
-    a = A*np.array([1.0, a1/norm, a2/norm])
+    b = np.array([b0, b1, b2])/norm
+    a = np.array([1.0, a1/norm, a2/norm])
     return np.array([np.append(b, a)])
 
 def bq_highshelf(sr, freq, Q, gain):
@@ -250,6 +250,6 @@ def bq_highshelf(sr, freq, Q, gain):
     b2 = A*((A+1) + (A-1)*cosw - 2*np.sqrt(A)*alpha)
     a1 = 2*((A-1) - (A+1)*cosw)
     a2 = (A+1) - (A-1)*cosw - 2*np.sqrt(A)*alpha
-    b = A*np.array([b0, b1, b2])/norm
-    a = A*np.array([1.0, a1/norm, a2/norm])
+    b = np.array([b0, b1, b2])/norm
+    a = np.array([1.0, a1/norm, a2/norm])
     return np.array([np.append(b, a)])
