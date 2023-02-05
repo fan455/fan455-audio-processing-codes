@@ -1,7 +1,7 @@
 # Filter
 
 import numpy as np
-from scipy import fft, signal
+from scipy import signal
 
 # IIR filter
 # Input: signal and filter coefficients/parameters
