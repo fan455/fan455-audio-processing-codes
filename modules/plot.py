@@ -4,10 +4,11 @@ Plot
 import numpy as np
 import matplotlib.pyplot as plt
 
+#plt.rcParams['figure.dpi'] = 150
+#plt.rcParams['savefig.dpi'] = 150
+
 def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5', **kwargs):
-    """
-    x, y: 1d arrays with the same size.
-    """
+    # x and y are both 1d arrays with the same size.
     fig, ax = plt.subplots(facecolor=bgcolor)
     ax.set_facecolor(bgcolor)
     if x is None:
@@ -23,6 +24,7 @@ def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#
   
 def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
              xlabel='x', ylabel='y', grid=False, bgcolor='#D1DDC5', **kwargs):
+    # x is a 1d array, y is a 2d array with shape(n_subplots, x.size).
     assert x.ndim == 1 and y.ndim == 2
     if yaxis == 0:
         y = np.swapaxes(y, 0, 1)
@@ -58,11 +60,25 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
     plt.ylabel(ylabel, loc='center')
     plt.show()
 
+def plot_itp(y, x, points, title='title', xlabel='x', ylabel='y', \
+             grid=True, bgcolor='#D1DDC5', **kwargs):
+    # points is a 2d array with shape(n_points, 2), that will be annotated.
+    # points = np.array([[x1, y1], [x2, y2],..., [xn, yn]])
+    fig, ax = plt.subplots(facecolor=bgcolor)
+    ax.set_facecolor(bgcolor)
+    ax.plot(x, y, **kwargs)
+    n_points = points.shape[0]
+    px, py = points[:, 0], points[:, 1]
+    ax.plot(px, py, linestyle='', marker='.', markersize=9, mec='black', mfc='black')
+    plt.title(title)
+    plt.xlabel(xlabel, loc='right')
+    plt.ylabel(ylabel, loc='center')
+    if grid:
+        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
+    plt.show()
+    
 def plot_xint(y, x=None, title='title', xlabel='x', ylabel='y', \
               grid=True, annotate_x=False, bgcolor='#D1DDC5'):
-    """
-    x, y: 1d arrays with the same size.
-    """
     fig, ax = plt.subplots(facecolor=bgcolor)
     ax.set_facecolor(bgcolor)
     if x is None:
