@@ -21,6 +21,24 @@ def iirsos(y, sos, axis=0):
 def iirsos2(y, sos, axis=0):
     return signal.sosfiltfilt(sos, y, axis=axis)
 
+def butter(y, sr, btype, order, freq, axis=0):
+    # N (lp or hp) or 2*N (bp or bs) -order Butterworth filter
+    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
+    b, a = get_ba_butter(sr, btype, order, freq)
+    return iir(y, b, a, axis=axis)
+
+def butter2(y, sr, btype, order, freq, axis=0):
+    b, a = get_ba_butter(sr, btype, order, freq)
+    return iir2(y, b, a, axis=axis)
+
+def buttersos(y, sr, btype, order, freq, axis=0):
+    sos = get_sos_butter(sr, btype, order, freq)
+    return iirsos(y, sos, axis=axis)
+
+def buttersos2(y, sr, btype, order, freq, axis=0):
+    sos = get_sos_butter(sr, btype, order, freq)
+    return iirsos2(y, sos, axis=axis)
+
 def bq(y, sr, bqfunc, freq, Q, gain=None, axis=0):
     """
     Single biquad filter
@@ -54,24 +72,6 @@ def bqcas2(y, sr, bqfunc_list, freq_list, Q_list, gain_list=None, axis=0):
     sos = get_sos_bqcas(sr, bqfunc_list, freq_list, Q_list, gain_list)
     return iirsos2(y, sos, axis=axis)
 
-def butter(y, sr, btype, order, freq, axis=0):
-    # N (lp or hp) or 2*N (bp or bs) -order Butterworth filter
-    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
-    b, a = get_ba_butter(sr, btype, order, freq)
-    return iir(y, b, a, axis=axis)
-
-def butter2(y, sr, btype, order, freq, axis=0):
-    b, a = get_ba_butter(sr, btype, order, freq)
-    return iir2(y, b, a, axis=axis)
-
-def buttersos(y, sr, btype, order, freq, axis=0):
-    sos = get_sos_butter(sr, btype, order, freq)
-    return iirsos(y, sos, axis=axis)
-
-def buttersos2(y, sr, btype, order, freq, axis=0):
-    sos = get_sos_butter(sr, btype, order, freq)
-    return iirsos2(y, sos, axis=axis)
-
 # IIR filter frequency response
 # Input: filter coefficients/parameters
 # Output: frequency response i.e. frequency (Hz), magnitude (dB) and phase (rad) arrays.
@@ -103,16 +103,16 @@ def fr_buttersps(sr, btype, order, freq, axis=0):
 
 # IIR filter coefficient
 # Input: filter parameters
-# Output: filter coefficients)
+# Output: filter coefficients
 # Reference: Audio EQ Cookbook (W3C Working Group Note, 08 June 2021)
 
 def cascade_sos(sos_list):
     # input sos list (or tuple): [sos1, sos2,..., sosn]
     return np.concatenate(sos_list, axis=0)
 
-def repeat_sos(sos, n):
-    # Broadcast a sos from shape(1, 6) to shape(n, 6).
-    return np.broadcast_to(sos, (n, 6))
+def tile_sos(sos, n):
+    # Tile a sos from shape(nsos, 6) to shape(n*nsos, 6).
+    return np.tile(sos, (n, 1))
 
 def get_ba_butter(sr, btype, order, freq):
     # Get the b and a parameters of a butterworth IIR filter.
