@@ -32,7 +32,7 @@ def bq(y, sr, sos_bq_type, axis=0, **kwargs):
     # **kwargs may include: freq, Q, bw (bandwidth), slope, gain. But only freq is always needed.
     # Please refer to the different "sos_bq_type" functions in the "IIR filter coefficient" section.
     sos = sos_bq(sr, sos_bq_type, **kwargs)
-    return irrsos(y, sos, axis=axis)
+    return iirsos(y, sos, axis=axis)
 
 def bqcas(y, sr, sos_bq_type, axis=0, **kwargs):
     # Cascaded biquad filters of the same type.
@@ -41,14 +41,14 @@ def bqcas(y, sr, sos_bq_type, axis=0, **kwargs):
     # The length of input lists (should be the same) is the number of sos.
     # Returned sos array shape is (number of sos, 6).
     sos = sos_bqcas(sr, sos_bq_type, **kwargs)
-    return irrsos(y, sos, axis=axis)
+    return iirsos(y, sos, axis=axis)
 
 def bqtile(y, sr, sos_bq_type, ntile=2, axis=0, **kwargs):
     # Tiled biquad filters of the same type and the same parameters.
     # **kwargs need to be single values, e.g. freq=200, Q=0.7.
     sos = sos_bq(sr, sos_bq_type, **kwargs)
     sos = tile_sos(sos, ntile)
-    return irrsos(y, sos, axis=axis)
+    return iirsos(y, sos, axis=axis)
 
 def iir2(y, b, a, axis=0):
     return signal.filtfilt(b, a, y, axis=axis)
@@ -66,16 +66,16 @@ def buttersos2(y, sr, btype, order, freq, axis=0):
 
 def bq2(y, sr, sos_bq_type, axis=0, **kwargs):
     sos = sos_bq(sr, sos_bq_type, **kwargs)
-    return irrsos2(y, sos, axis=axis)
+    return iirsos2(y, sos, axis=axis)
 
 def bqcas2(y, sr, sos_bq_type, axis=0, **kwargs):
     sos = sos_bqcas(sr, sos_bq_type, **kwargs)
-    return irrsos2(y, sos, axis=axis)
+    return iirsos2(y, sos, axis=axis)
 
 def bqtile2(y, sr, sos_bq_type, ntile=2, axis=0, **kwargs):
     sos = sos_bq(sr, sos_bq_type, **kwargs)
     sos = tile_sos(sos, ntile)
-    return irrsos2(y, sos, axis=axis)
+    return iirsos2(y, sos, axis=axis)
 
 # IIR filter frequency response
 # Input: filter coefficients/parameters
@@ -116,7 +116,7 @@ def sos_butter(sr, btype, order, freq):
     return signal.butter(order, freq, btype=btype, output='sos', fs=sr)
 
 def sos_iir(sr, ftype, btype, order, freq, rp=None, rs=None):
-    # Get the sos of certain types of IRR filter.
+    # Get the sos of certain types of IIR filter.
     # signal.iirfilter
     # ftype: 'butter', 'cheby1', 'cheby2', 'ellip', 'bessel'
     # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
