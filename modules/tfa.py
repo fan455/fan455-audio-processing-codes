@@ -9,10 +9,10 @@ def get_fftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.fft(y, axis=axis, norm='backward'))
 
-def get_rfftmf(y, sr, axis=-1):
+def get_fftmf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
     y_fftm = np.abs(fft.fft(y, axis=axis, norm='backward'))
-    y_fftf = fft.fftfreq(y.size, d=1/sr)
+    y_fftf = fft.fftfreq(y.shape[axis], d=1/sr)
     return y_fftm, y_fftf
 
 def get_rfftm(y, axis=-1):
@@ -22,7 +22,7 @@ def get_rfftm(y, axis=-1):
 def get_rfftmf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
     y_rfftm = np.abs(fft.rfft(y, axis=axis, norm='backward'))
-    y_rfftf = fft.rfftfreq(y.size, d=1/sr)
+    y_rfftf = fft.rfftfreq(y.shape[axis], d=1/sr)
     return y_rfftm, y_rfftf
 
 def get_fft(y, axis=-1):
