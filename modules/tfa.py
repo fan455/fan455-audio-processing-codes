@@ -5,146 +5,159 @@ import numpy as np
 from scipy import fft, signal
 
 # discrete cosine transform
-def get_dct(y, axis=-1, dct_type=2):
+def dct_z(y, axis=-1, dct_type=2):
     return fft.dct(y, dct_type, axis=axis, norm='backward')
 
-def get_dctmf(y, sr, axis=-1, dct_type=2):
+def dct_zf(y, sr, axis=-1, dct_type=2):
+    z = fft.dct(y, dct_type, axis=axis, norm='backward')
+    f = fft.fftfreq(y.shape[axis], d=1/sr)
+    return z, f
+
+def dct_mf(y, sr, axis=-1, dct_type=2):
     # returns: magnitude, frequency
-    y_dct = fft.dct(y, dct_type, axis=axis, norm='backward')
-    m = np.abs(y_dct)
+    z = fft.dct(y, dct_type, axis=axis, norm='backward')
+    m = np.abs(z)
     f = fft.fftfreq(y.shape[axis], d=1/sr)
     return m, f
 
-def get_dctmp(y, axis=-1, dct_type=2):
+def dct_mf(y, sr, axis=-1, dct_type=2):
+    # returns: magnitude, frequency
+    z = fft.dct(y, dct_type, axis=axis, norm='backward')
+    m = np.abs(z)
+    f = fft.fftfreq(y.shape[axis], d=1/sr)
+    return m, f
+
+def dct_mp(y, axis=-1, dct_type=2):
     # returns: magnitude, sign
-    y_dct = fft.dct(y, dct_type, axis=axis, norm='backward')
-    m = np.abs(y_dct)
-    p = np.sign(y_dct)
+    z = fft.dct(y, dct_type, axis=axis, norm='backward')
+    m = np.abs(z)
+    p = np.sign(z)
     return m, p
 
-def get_dctmpf(y, sr, axis=-1, dct_type=2):
+def dct_mpf(y, sr, axis=-1, dct_type=2):
     # returns: magnitude, sign, frequency
-    y_dct = fft.dct(y, dct_type, axis=axis, norm='backward')
-    m = np.abs(y_dct)
-    p = np.sign(y_dct)
+    z = fft.dct(y, dct_type, axis=axis, norm='backward')
+    m = np.abs(z)
+    p = np.sign(z)
     f = fft.fftfreq(y.shape[axis], d=1/sr)
     return m, p, f
 
-def get_idct(y_dct, axis=-1, dct_type=2):
-    return fft.idct(y_dct, dct_type, axis=axis, norm='backward')
+def idct_z(z, axis=-1, dct_type=2):
+    return fft.idct(z, dct_type, axis=axis, norm='backward')
 
-def get_idctmp(m, p, axis=-1, dct_type=2):
+def idct_mp(m, p, axis=-1, dct_type=2):
     return fft.idct(m*p, dct_type, axis=axis, norm='backward')
 
 # real discrete Fourier transform
-def get_rfft(y, axis=-1):
+def rfft_z(y, axis=-1):
     return fft.rfft(y, axis=axis, norm='backward')
 
-def get_rfftm(y, axis=-1):
+def rfft_m(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.rfft(y, axis=axis, norm='backward'))
 
-def get_rfftmf(y, sr, axis=-1):
+def rfft_mf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
     m = np.abs(fft.rfft(y, axis=axis, norm='backward'))
     f = fft.rfftfreq(y.shape[axis], d=1/sr)
     return m, f
 
-def get_rfftmp(y, axis=-1):
+def rfft_mp(y, axis=-1):
     z = fft.rfft(y, axis=axis, norm='backward')
     m = np.abs(z)
     p = np.unwrap(np.angle(z))
     return m, p
 
-def get_rfftmpf(y, sr, axis=-1):
+def rfft_mpf(y, sr, axis=-1):
     z = fft.rfft(y, axis=axis, norm='backward')
     m = np.abs(z)
     p = np.unwrap(np.angle(z))
     f = fft.rfftfreq(y.shape[axis], d=1/sr)
     return m, p, f
 
-def get_irfft(z, time_size_is_even=True, axis=-1):
+def irfft_z(z, time_size_is_even=True, axis=-1):
     if time_size_is_even:
         return fft.irfft(z, axis=axis, norm='backward')
     else:
-        return fft.irfft(z, n=z.shape[axis]*2 - 1, axis=axis, norm='backward')
+        return fft.irfft(z, n=z.shape[axis]*2-1, axis=axis, norm='backward')
 
-def get_irfftmp(m, p, time_size_is_even=True, axis=-1):
+def irfft_mp(m, p, time_size_is_even=True, axis=-1):
     z = np.empty(m.shape, dtype=np.complex128)
     z.real, z.imag = m*np.cos(p), m*np.sin(p)
     if time_size_is_even:
         return fft.irfft(z, axis=axis, norm='backward')
     else:
-        return fft.irfft(z, n=z.shape[axis]*2 - 1, axis=axis, norm='backward')
+        return fft.irfft(z, n=z.shape[axis]*2-1, axis=axis, norm='backward')
 
 # discrete Fourier transform
-def get_fft(y, axis=-1):
+def fft_z(y, axis=-1):
     return fft.fft(y, axis=axis, norm='backward')
 
-def get_fftm(y, axis=-1):
+def fft_m(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.fft(y, axis=axis, norm='backward'))
 
-def get_fftmf(y, sr, axis=-1):
+def fft_mf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
     m = np.abs(fft.fft(y, axis=axis, norm='backward'))
     f = fft.fftfreq(y.shape[axis], d=1/sr)
     return m, f
 
-def get_fftmp(y, axis=-1):
+def fft_mp(y, axis=-1):
     z = fft.fft(y, axis=axis, norm='backward')
     m = np.abs(z)
     p = np.unwrap(np.angle(z))
     return m, p
 
-def get_fftmpf(y, sr, axis=-1):
+def fft_mpf(y, sr, axis=-1):
     z = fft.fft(y, axis=axis, norm='backward')
     m = np.abs(z)
     p = np.unwrap(np.angle(z))
     f = fft.fftfreq(y.shape[axis], d=1/sr)
     return m, p, f
 
-def get_ifft(z, axis=-1):
+def ifft_z(z, axis=-1):
     return fft.ifft(z, axis=axis, norm='backward')
 
-def get_ifftmp(m, p, axis=-1):
+def ifft_mp(m, p, axis=-1):
     z = np.empty(m.shape, dtype=np.complex128)
     z.real, z.imag = m*np.cos(p), m*np.sin(p)
     return fft.ifft(z, axis=axis, norm='backward')
 
 # Hilbert transform
-def get_hilbert(y, axis=-1):
+def hilbert_z(y, axis=-1):
+    # This returns the analytic signal of y.
     return signal.hilbert(y, axis=axis)
 
-def get_hilbert_ap(y, axis=-1):
+def hilbert_ap(y, axis=-1):
     # This returns (am, pm), the instaneous amplitude and phase arrays.
-    ya = signal.hilbert(y, axis=axis)
-    return np.abs(ya), np.unwrap(np.angle(ya))
+    z = signal.hilbert(y, axis=axis)
+    return np.abs(z), np.unwrap(np.angle(z))
 
-def get_hilbert_af(y, sr, axis=-1):
+def hilbert_af(y, sr, axis=-1):
     # This returns (am, fm), the instaneous amplitude and frequency arrays.
     # The length of the fm array is reduced by one.
-    ya = signal.hilbert(y, axis=axis)
-    am = np.abs(ya)
+    z = signal.hilbert(y, axis=axis)
+    am = np.abs(z)
     if y.ndim == 2:
         if axis == -1 or axis == 1:
-            fm = 0.5*sr*(ya.real[:,:-1]*np.diff(ya.imag,axis=1) - \
-                         ya.imag[:,:-1]*np.diff(ya.real,axis=1)) / \
-                         ((ya.real[:,:-1]**2 + ya.imag[:,:-1]**2)*np.pi)
+            fm = 0.5*sr*(z.real[:,:-1]*np.diff(z.imag,axis=1) - \
+                         z.imag[:,:-1]*np.diff(z.real,axis=1)) / \
+                         ((z.real[:,:-1]**2 + z.imag[:,:-1]**2)*np.pi)
         elif axis == 0:
-            fm = 0.5*sr*(ya.real[:-1,:]*np.diff(ya.imag,axis=0) - \
-                         ya.imag[:-1,:]*np.diff(ya.real,axis=0)) / \
-                         ((ya.real[:-1,:]**2 + ya.imag[:-1,:]**2)*np.pi)            
+            fm = 0.5*sr*(z.real[:-1,:]*np.diff(z.imag,axis=0) - \
+                         z.imag[:-1,:]*np.diff(z.real,axis=0)) / \
+                         ((z.real[:-1,:]**2 + z.imag[:-1,:]**2)*np.pi)            
     elif y.ndim == 1:
-        fm = 0.5*sr*(ya.real[:-1]*np.diff(ya.imag) - ya.imag[:-1]*np.diff(ya.real)) / \
-             ((ya.real[:-1]**2 + ya.imag[:-1]**2)*np.pi)
+        fm = 0.5*sr*(z.real[:-1]*np.diff(z.imag) - z.imag[:-1]*np.diff(z.real)) / \
+             ((z.real[:-1]**2 + z.imag[:-1]**2)*np.pi)
     return am, fm
 
-def get_ihilbert(ya):
-    return np.real(ya)
+def ihilbert_z(z):
+    return np.real(z)
 
-def get_ihilbert_ap(am, pm):
-    return am*np.cos(pm) 
+def ihilbert_ap(am, pm):
+    return am*np.cos(pm)
 
 # Test signal
 def get_sinewave(sr, du=1.0, f=440, phase=0, A=0.3, stereo=False, ls=None, ts=None):
