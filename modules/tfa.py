@@ -4,16 +4,41 @@
 import numpy as np
 from scipy import fft, signal
 
-# Time-frequency transform
-def get_fftm(y, axis=-1):
-    # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
-    return np.abs(fft.fft(y, axis=axis, norm='backward'))
+# discrete cosine transform
+def get_dct(y, axis=-1, dct_type=2):
+    return fft.dct(y, dct_type, axis=axis, norm='backward')
 
-def get_fftmf(y, sr, axis=-1):
-    # This returns frequency magnitudes and the frequencies consistent with sr.
-    y_fftm = np.abs(fft.fft(y, axis=axis, norm='backward'))
-    y_fftf = fft.fftfreq(y.shape[axis], d=1/sr)
-    return y_fftm, y_fftf
+def get_dctmf(y, sr, axis=-1, dct_type=2):
+    # returns: magnitude, frequency
+    y_dct = fft.dct(y, dct_type, axis=axis, norm='backward')
+    m = np.abs(y_dct)
+    f = fft.fftfreq(y.shape[axis], d=1/sr)
+    return m, f
+
+def get_dctmp(y, axis=-1, dct_type=2):
+    # returns: magnitude, sign
+    y_dct = fft.dct(y, dct_type, axis=axis, norm='backward')
+    m = np.abs(y_dct)
+    p = np.sign(y_dct)
+    return m, p
+
+def get_dctmpf(y, sr, axis=-1, dct_type=2):
+    # returns: magnitude, sign, frequency
+    y_dct = fft.dct(y, dct_type, axis=axis, norm='backward')
+    m = np.abs(y_dct)
+    p = np.sign(y_dct)
+    f = fft.fftfreq(y.shape[axis], d=1/sr)
+    return m, p, f
+
+def get_idct(y_dct, axis=-1, dct_type=2):
+    return fft.idct(y_dct, dct_type, axis=axis, norm='backward')
+
+def get_idctmp(m, p, axis=-1, dct_type=2):
+    return fft.idct(m*p, dct_type, axis=axis, norm='backward')
+
+# real discrete Fourier transform
+def get_rfft(y, axis=-1):
+    return fft.rfft(y, axis=axis, norm='backward')
 
 def get_rfftm(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
@@ -21,28 +46,73 @@ def get_rfftm(y, axis=-1):
 
 def get_rfftmf(y, sr, axis=-1):
     # This returns frequency magnitudes and the frequencies consistent with sr.
-    y_rfftm = np.abs(fft.rfft(y, axis=axis, norm='backward'))
-    y_rfftf = fft.rfftfreq(y.shape[axis], d=1/sr)
-    return y_rfftm, y_rfftf
+    m = np.abs(fft.rfft(y, axis=axis, norm='backward'))
+    f = fft.rfftfreq(y.shape[axis], d=1/sr)
+    return m, f
 
+def get_rfftmp(y, axis=-1):
+    z = fft.rfft(y, axis=axis, norm='backward')
+    m = np.abs(z)
+    p = np.unwrap(np.angle(z))
+    return m, p
+
+def get_rfftmpf(y, sr, axis=-1):
+    z = fft.rfft(y, axis=axis, norm='backward')
+    m = np.abs(z)
+    p = np.unwrap(np.angle(z))
+    f = fft.rfftfreq(y.shape[axis], d=1/sr)
+    return m, p, f
+
+def get_irfft(z, time_size_is_even=True, axis=-1):
+    if time_size_is_even:
+        return fft.irfft(z, axis=axis, norm='backward')
+    else:
+        return fft.irfft(z, n=z.shape[axis]*2 - 1, axis=axis, norm='backward')
+
+def get_irfftmp(m, p, time_size_is_even=True, axis=-1):
+    z = np.empty(m.shape, dtype=np.complex128)
+    z.real, z.imag = m*np.cos(p), m*np.sin(p)
+    if time_size_is_even:
+        return fft.irfft(z, axis=axis, norm='backward')
+    else:
+        return fft.irfft(z, n=z.shape[axis]*2 - 1, axis=axis, norm='backward')
+
+# discrete Fourier transform
 def get_fft(y, axis=-1):
     return fft.fft(y, axis=axis, norm='backward')
 
-def get_ifft(y_fft, axis=-1):
-    return fft.ifft(y_fft, axis=axis, norm='backward')
+def get_fftm(y, axis=-1):
+    # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
+    return np.abs(fft.fft(y, axis=axis, norm='backward'))
 
-def get_rfft(y, axis=-1):
-    return fft.rfft(y, axis=axis, norm='backward')
+def get_fftmf(y, sr, axis=-1):
+    # This returns frequency magnitudes and the frequencies consistent with sr.
+    m = np.abs(fft.fft(y, axis=axis, norm='backward'))
+    f = fft.fftfreq(y.shape[axis], d=1/sr)
+    return m, f
 
-def get_irfft(y_rfft, axis=-1):
-    return fft.irfft(y_rfft, axis=axis, norm='backward')
+def get_fftmp(y, axis=-1):
+    z = fft.fft(y, axis=axis, norm='backward')
+    m = np.abs(z)
+    p = np.unwrap(np.angle(z))
+    return m, p
 
-def get_dct(y, axis=-1, dct_type=2):
-    return fft.dct(au, dct_type, axis=axis, norm='backward')
+def get_fftmpf(y, sr, axis=-1):
+    z = fft.fft(y, axis=axis, norm='backward')
+    m = np.abs(z)
+    p = np.unwrap(np.angle(z))
+    f = fft.fftfreq(y.shape[axis], d=1/sr)
+    return m, p, f
 
-def get_idct(y_dct, axis=-1, dct_type=2):
-    return fft.idct(y_dct, dct_type, axis=axis, norm='backward')
+def get_ifft(z, axis=-1):
+    return fft.ifft(z, axis=axis, norm='backward')
 
+def get_ifftmp(m, p, axis=-1):
+    z = np.empty(m.shape, dtype=np.complex128)
+    z.real, z.imag = m*np.cos(p), m*np.sin(p)
+    return fft.ifft(z, axis=axis, norm='backward')
+
+# Hilbert transform
 def get_hilbert(y, axis=-1):
     return signal.hilbert(y, axis=axis)
 
@@ -75,147 +145,6 @@ def get_ihilbert(ya):
 
 def get_ihilbert_ap(am, pm):
     return am*np.cos(pm) 
-
-class stft_class():
-    # STFT and ISTFT using python's class.
-    def __init__(self, sr, T=0.025, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
-        """
-        Parameters:
-        sr: int (Hz). Sample rate, ususally 44100 or 48000.
-        T: float (seconds). Time length of a each window. For 48000kHz, T=0.01067 means n=512.
-        overlap: float (ratio between 0 and 1). Overlap ratio between each two adjacent windows.
-        fft_ratio: float (ratio >= 1). The fft ratio relative to T.
-        win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
-        fft_type: str ('m', 'm, p', 'z' or 'zr, zi'). Please refer to the illustration of the returns of self.forward(). If fft_type=='m', istft will use the Griffin-Lim algorithm (GLA).
-        GLA_n_iter: int. The iteration times for GLA.
-        GLA_random_phase_type: str ('mono' or 'stereo'). Whether the starting random phases for GLA are different between 2 stereo channels.
-        """
-        self.sr, self.nperseg, self.noverlap, self.nfft = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio)
-        self.nhop = self.nperseg - self.noverlap
-        self.win, self.fft_type = signal.windows.get_window(win, self.nperseg, fftbins=True), fft_type
-        self.GLA_n_iter, self.GLA_random_phase_type = GLA_n_iter, GLA_random_phase_type
-
-    def fw(self, au):
-        """
-        Short-Time Fourier Transform
-
-        Parameters:
-        au: ndarray (dtype = float between -1 and 1). Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. 
-
-        Returns:
-        f: 1d array. As signal.stft returns.
-        t: 1d array. As signal.stft returns.
-        m: if self.fft_type='m'. The magnitudes array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]). PLEASE NOTE that the istft will use phases of a white noise!
-        m, p: if self.fft_type='m, p'. The magnitudes array and phases array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]). The phase range is [-pi, pi].
-        z: if self.fft_type='z'. The complex array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]).
-        zr, zi: if self.fft_type='zr, zi'. The complex array' real array and imaginary array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]).
-        """
-        f, t, z = signal.stft(au, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
-        z = z.swapaxes(1, -1)
-        print(f'au.shape = {au.shape}')
-        print(f'f.shape = {f.shape}')
-        print(f't.shape = {t.shape}')
-        print(f'z.shape = {z.shape}')
-        if self.fft_type == 'm':
-            m = np.abs(z)
-            print(f'm.shape = {m.shape}')
-            return f, t, m
-        elif self.fft_type == 'm, p':
-            m, p = np.abs(z), np.unwrap(np.angle(z))
-            print(f'm.shape = {m.shape}')
-            print(f'p.shape = {p.shape}')
-            return f, t, m, p
-        elif self.fft_type == 'z':
-            return f, t, z
-        elif self.fft_type == 'zr, zi':
-            return f, t, z.real, z.imag
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
-
-    def bw(self, m=None, p=None, z=None, zr=None, zi=None, nsample=None):
-        """
-        Inverse Short-Time Fourier Transform
-
-        Parameters:
-        in_tup: an ndarray or a tuple containing 2 ndarrays corresponding to self.fft_type. Please refer to the illustration of the returns of self.forward().
-        
-        Returns:
-        au_re: ndarray. Audio array after inverse short-time fourier transform.
-        """
-        if self.fft_type == 'm, p':
-            assert m is not None, f'm is None'
-            assert p is not None, f'p is None'
-            z = np.empty(m.shape, dtype=np.complex128)
-            z.real, z.imag = m*np.cos(p), m*np.sin(p)
-        elif self.fft_type == 'm':
-            assert m is not None, f'm is None'
-            assert nsample is not None, f'nsample is None'
-            p = self.get_random_phase(nsample, m.ndim)
-            z = np.empty(m.shape, dtype=np.complex128)
-            z.real, z.imag = m*np.cos(p), m*np.sin(p)
-            for i in range(0, self.GLA_n_iter):
-                t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
-                f, t, z = signal.stft(au_re, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
-                z = z.swapaxes(1, -1)
-                p = np.angle(z)
-                z.real, z.imag = m*np.cos(p), m*np.sin(p)   
-        elif self.fft_type == 'z':
-            assert z is not None, f'z is None'
-        elif self.fft_type == 'zr, zi':
-            assert zr is not None, f'zr is None'
-            assert zi is not None, f'zi is None'
-            z = np.empty(in_tup[0].shape, dtype=np.complex128)
-            z.real, z.imag = zr, zi
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
-        t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
-        print(f'au_re.shape = {au_re.shape}')
-        return au_re
-
-    def re(self, au):
-        """
-        Reconstruct an audio array using stft and then istft. Please refer to the illustration of the returns of self.forward().
-
-        Parameters:
-        au: ndarray (dtype = float between -1 and 1). Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. 
-        """          
-        if self.fft_type == 'm, p':
-            f, t, m, p = self.fw(au)
-            au_re = self.bw(m=m, p=p)
-        elif self.fft_type == 'm':
-            # Using the Griffin-Lim algorithm.
-            f, t, m = self.fw(au)
-            nsample = au.shape[0]
-            print(f'nsample = {nsample}')
-            au_re = self.bw(m=m, nsample=nsample)
-        elif self.fft_type == 'z':
-            f, t, z = self.fw(au)
-            au_re = self.bw(z=z)
-        elif self.fft_type == 'zr, zi':
-            f, t, zr, zi = self.fw(au)
-            au_re = self.bw(zr=zr, zi=zi)
-        else:
-            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
-        return au_re        
-
-    def get_random_phase(self, nsample, m_ndim):
-        if m_ndim == 3:
-            if self.GLA_random_phase_type == 'mono':
-                noise = 0.5*np.random.uniform(-1, 1, nsample)
-                noise = np.stack((noise, noise), axis=-1)
-            elif self.GLA_random_phase_type == 'stereo':
-                noise = 0.5*np.random.uniform(-1, 1, (nsample, 2))
-            else:
-                raise ValueError('self.GLA_random_phase_type != "mono" or "stereo"')
-        elif m_ndim == 2:
-            noise = 0.5*np.random.uniform(-1, 1, nsample)
-        else:
-            raise ValueError('m_ndim != 2 or 3')
-        f_noise, t_noise, z_noise = signal.stft(noise, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
-        z_noise = z_noise.swapaxes(1, -1)
-        p_noise = np.angle(z_noise*np.exp(0.5*np.pi*1.0j))
-        print(f'p_noise.shape = {p_noise.shape}')
-        return p_noise    
 
 # Test signal
 def get_sinewave(sr, du=1.0, f=440, phase=0, A=0.3, stereo=False, ls=None, ts=None):
@@ -320,9 +249,8 @@ def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1
     Parameters:
     au: ndarray (float between -1 and 1). The input audio.
     sr: int. Sample rate of audio.
-    channel: int. The index of the audio channel to analyze. Only supports 1-channel analysis. None (using all channels) is not supported.
     du: None or float (seconds). The duration of audio to be analyzed. If set to None, it will be the maxinum integar seconds available.
-    given_freq: float (Hz).
+    given_freq: float (Hz). The central frequency around which pitch will be detected.
     given_cent: positive float (cent). Half of the cent band around the given frequency for pitch detection.
     cent_step: float (cent). The distance between Fourier transform's frequencies measured in cents, i.e. the resolution of frequencies.
     """
@@ -332,63 +260,17 @@ def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1
         au = np.average(au, axis=-1)
     else:
         raise ValueError('The input audio array has no dimension, or over 2 dimensions which means it may be a framed audio.')
-    if du == None:
-        t_size = sr*(au.size//sr)
+    if du is None:
+        size = au.size
     else:
-        t_size = int(sr*du)
-    au = au[0: t_size]
-    t = np.arange(0, t_size)/sr
+        size = int(sr*du)
+        au = au[0: size]
+    t = np.arange(0, size)/sr
     F = given_freq*np.exp2(np.arange(-given_cent, given_cent+1, cent_step)/1200)
-    F_size = F.size
     M = np.empty(0)
-    for i in range(0, F_size):
-        f = F[i]
-        m = np.abs(np.average(au*np.exp(-2*np.pi*f*1.0j*t)))
+    for f in F:
+        m = np.abs(np.average(au*np.exp(-2*np.pi*f*t*1.0j)))
         M = np.append(M, m)
     pitch = F[np.argmax(M)]
     print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, {round(given_cent, 2)} cent band and {np.round(cent_step, 2)} cent step.')
     return pitch
-
-def get_framed(au, sr, T=0.4, overlap=0.75, win='hamming'):
-    """
-    Parameters
-    au: ndarray. Needs to have mono shape (samples_num, ) or multi-channel shape (samples_num, channels_num)
-    sr: float (Hz). Sample rate of input audio array.
-    T: float (seconds). Time length of each window.
-    overlap: float, proportion. Proportion of overlapping between windows.
-    win: str or tuple. The window to apply to every frame. No need to provide window size. Please refer to signal.get_windows.
-
-    Returns
-    au_f: ndarray. Framed audio with mono shape (window_num, samples) or multi-channel shape (window_num, samples_num, channels_num).
-    """
-    step, hop = int(sr*T), int(sr*T*(1-overlap))
-    if au.ndim == 2:
-        q1, q2 = divmod(au.shape[0], hop)
-        q3 = step - hop - q2
-        if q3 > 0:
-            au = np.append(au, np.zeros((q3, au.shape[-1])), axis=0)
-        elif q3 < 0:
-            raise ValueError('q3 < 0')
-        au = au.reshape((1, au.shape[0], au.shape[1]))
-        au_f = au[:, 0: step, :]
-        for i in range(1, q1):
-            au_f = np.append(au_f, au[:, i*hop: i*hop+step, :], axis=0)
-        if win:
-            au_f *= signal.get_window(win, step).reshape((1, step, 1))
-        return au_f
-    elif au.ndim == 1:
-        q1, q2 = divmod(au.shape[0], hop)
-        q3 = step - hop - q2
-        if q3 > 0:
-            au = np.append(au, np.zeros(q3), axis=0)
-        elif q3 < 0:
-            raise ValueError('q3 < 0')
-        au = au.reshape((1, au.shape[0]))
-        au_f = au[:, 0: step]
-        for i in range(1, q1):
-            au_f = np.append(au_f, au[:, i*hop: i*hop+step], axis=0)
-        if win:
-            au_f *= signal.get_window(win, step).reshape((1, step))
-        return au_f
-    else:
-        raise ValueError(f'au.ndim = {au.ndim} is not supported.')
