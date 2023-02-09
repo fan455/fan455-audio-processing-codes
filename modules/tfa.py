@@ -1,5 +1,4 @@
 # Audio Time-Frequency Analysis
-# recommended import line: from modules.tfa import *
 
 import numpy as np
 from scipy import fft, signal
@@ -52,6 +51,11 @@ def idct_mp(m, p, axis=-1, dct_type=2):
 def rfft_z(y, axis=-1):
     return fft.rfft(y, axis=axis, norm='backward')
 
+def rfft_zf(y, sr, axis=-1):
+    z = fft.rfft(y, axis=axis, norm='backward')
+    f = fft.rfftfreq(y.shape[axis], d=1/sr)
+    return z, f
+
 def rfft_m(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
     return np.abs(fft.rfft(y, axis=axis, norm='backward'))
@@ -92,6 +96,11 @@ def irfft_mp(m, p, time_size_is_even=True, axis=-1):
 # discrete Fourier transform
 def fft_z(y, axis=-1):
     return fft.fft(y, axis=axis, norm='backward')
+
+def fft_zf(y, sr, axis=-1):
+    z = fft.fft(y, axis=axis, norm='backward')
+    f = fft.fftfreq(y.shape[axis], d=1/sr)
+    return z, f
 
 def fft_m(y, axis=-1):
     # This returns frequency magnitudes (real positive numbers) instead of complex numbers.
@@ -136,22 +145,18 @@ def hilbert_ap(y, axis=-1):
 
 def hilbert_af(y, sr, axis=-1):
     # This returns (am, fm), the instaneous amplitude and frequency arrays.
-    # The length of the fm array is reduced by one.
     z = signal.hilbert(y, axis=axis)
     am = np.abs(z)
-    if y.ndim == 2:
-        if axis == -1 or axis == 1:
-            fm = 0.5*sr*(z.real[:,:-1]*np.diff(z.imag,axis=1) - \
-                         z.imag[:,:-1]*np.diff(z.real,axis=1)) / \
-                         ((z.real[:,:-1]**2 + z.imag[:,:-1]**2)*np.pi)
-        elif axis == 0:
-            fm = 0.5*sr*(z.real[:-1,:]*np.diff(z.imag,axis=0) - \
-                         z.imag[:-1,:]*np.diff(z.real,axis=0)) / \
-                         ((z.real[:-1,:]**2 + z.imag[:-1,:]**2)*np.pi)            
-    elif y.ndim == 1:
-        fm = 0.5*sr*(z.real[:-1]*np.diff(z.imag) - z.imag[:-1]*np.diff(z.real)) / \
-             ((z.real[:-1]**2 + z.imag[:-1]**2)*np.pi)
+    fm = 0.5*sr*np.diff(np.unwrap(np.angle(z)), axis=axis)/np.pi
     return am, fm
+
+def hilbert_apf(y, sr, axis=-1):
+    # This returns (am, pm, fm).
+    z = signal.hilbert(y, axis=axis)
+    am = np.abs(z)
+    pm = np.unwrap(np.angle(z))
+    fm = 0.5*sr*np.diff(pm, axis=axis)/np.pi
+    return am, pm, fm
 
 def ihilbert_z(z):
     return np.real(z)
@@ -159,7 +164,7 @@ def ihilbert_z(z):
 def ihilbert_ap(am, pm):
     return am*np.cos(pm)
 
-# Test signal
+# generate test signal
 def get_sinewave(sr, du=1.0, f=440, phase=0, A=0.3, stereo=False, ls=None, ts=None):
     """
     Generate a pure sine wave for testing.
@@ -252,7 +257,7 @@ def get_silence(sr, du=1.0, stereo=False):
     else:
         return np.zeros((size, 2))
 
-# Others
+# pitch detection
 def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1):
     """
     Detect the pitch of audio (specifically piano single note) given a pitch, cent band and cent step, using discrete time fourier transform in limited frequency range.
