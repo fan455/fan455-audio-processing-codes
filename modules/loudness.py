@@ -26,14 +26,11 @@ def change_vol(au, db_change):
 def check_clipping(au):
     assert np.amax(np.abs(au)) >= 1, 'Clipping has occurred.'
     
-def re_compare(au, au_re, sr):
+def recompare(au, au_re, sr):
     print('reconstruction comparison:')
     if sr:
-        print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/self.sr, 4)} seconds')
-    if au.ndim == 2:
-        print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0], :] - au))), 4)}db')
-    elif au.ndim == 1:
-        print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0]] - au))), 4)}db')
+        print(f'difference in length: {round((au_re.shape[0] - au.shape[0])/sr, 4)} seconds')
+    print(f'max error: {round(amp2db(np.amax(np.abs(au_re[:au.shape[0],...] - au))), 4)}db')
 
 class mlufs_meter():
     # This allows the pre-computation of prefilter coefficients for faster response, particularly when batch processing.
@@ -331,20 +328,20 @@ def get_peak_LR(au):
     peak_LR = np.amax(np.abs(au), axis=0)
     return peak_LR[0], peak_LR[1]
 
-def norm_mid_peak(au, amp=0.35):
+def norm_peak_mid(au, peak_db=-12.0):
     """
     normalize the peak amplitude of the mid channel of a stereo wav file under the normal -3db pan law.
     input array, output array, no read or write audio files.
     """
-    au *= amp/np.amax(np.abs(np.average(au, axis=-1)))
+    au *= db2amp(peak_db)/np.amax(np.abs(np.average(au, axis=-1)))
     return au
 
-def norm_mono_peak(au, amp=0.5):
+def norm_peak_mono(au, peak_db=-12.0):
     """
     normalize the peak amplitude of a mono audio.
     input array, output array, no read or write audio files.
     """
-    au *= amp/np.amax(np.abs(au))
+    au *= db2amp(peak_db)/np.amax(np.abs(au))
     return au
 
 def change_LR_peak_ratio(au, scale):
