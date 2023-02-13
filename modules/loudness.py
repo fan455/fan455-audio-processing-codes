@@ -75,7 +75,7 @@ class lufs_meter():
         self.sr, self.T, self.overlap, self.threshold, self.du_start = sr, T, overlap, threshold, du_start
         self.step, self.hop = int(sr*T), int(sr*T*(1-overlap))
         self.z_threshold = np.power(10, (threshold+0.691)/10)
-        if du_start is None:
+        if start_du is None:
             self.n_start = None
         else:
             self.n_start = int(sr*start_du)
