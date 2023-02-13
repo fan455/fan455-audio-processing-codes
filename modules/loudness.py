@@ -126,7 +126,7 @@ class lufs_meter():
     def get_mlufs(self, au):
         # Get the momentary LUFS array with size n_window.
         # The audio array will be padded zeros at the end to complete the last window.
-        au = au[:n_start,...]
+        au = au[:self.n_start,...]
         q1, q2 = divmod(au.shape[0], self.hop)
         q3 = self.step - self.hop - q2
         pad_shape = list(au.shape)
