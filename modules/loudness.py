@@ -60,7 +60,7 @@ def norm_peak_mono(au, peak_db=-12.0):
 class lufs_meter():
     # The momentary and integrated LUFS, defined as python class to pre-compute the window and prefilter coefficients.
     # Input audio need to have shape (nsample,) or (nsample, nchannel).
-    def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0, du_start=None):
+    def __init__(self, sr, T=0.4, overlap=0.75, threshold=-70.0, start_du=None):
         """
         Parameters
         sr: float (Hz). Sample rate for audio. If you want to process different sample rates, you need to set multiple meters.
@@ -78,7 +78,7 @@ class lufs_meter():
         if du_start is None:
             self.n_start = None
         else:
-            self.n_start = int(sr*du_start)
+            self.n_start = int(sr*start_du)
 
         # Calculate prefilter (containing 2 IIR filters) coefficients.
         if self.sr == 48000:
