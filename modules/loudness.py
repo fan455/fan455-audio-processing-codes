@@ -67,12 +67,12 @@ class lufs_meter():
         T: float (seconds). Time length of each window. You can change it to 3 to get the short-term lufs (Slufs).
         overlap: float (fraction). Proportion of overlapping between windows.
         threshold: float (LUFS or LKFS). If the LUFS is lower than this threshold, the meter will return -inf instead of very big negative numbers for runtime stability.
-        du_start: float (seconds). The start seconds to only analyze.
+        start_du: float (seconds). The start seconds to only analyze.
         Only works for mono or stereo audio because I just summed all the channels and didn't calculate the different weights in case of a more-than-2-channels audio input.
         """
         
         # Calculate window.
-        self.sr, self.T, self.overlap, self.threshold, self.du_start = sr, T, overlap, threshold, du_start
+        self.sr, self.T, self.overlap, self.threshold, self.du_start = sr, T, overlap, threshold, start_du
         self.step, self.hop = int(sr*T), int(sr*T*(1-overlap))
         self.z_threshold = np.power(10, (threshold+0.691)/10)
         if start_du is None:
