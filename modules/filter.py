@@ -95,19 +95,6 @@ def bqtile2(y, sr, sos_bq_type, ntile=2, axis=0, **kwargs):
     sos = tile_sos(sos, ntile)
     return iirsos2(y, sos, axis=axis)
 
-# IIR filter frequency response
-# Input: filter coefficients/parameters
-# Output: frequency response i.e. frequency (Hz), magnitude (dB) and phase (rad) arrays.
-# In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
-
-def fr_iir(sr, b, a):
-    f, z = signal.freqz(b, a, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
-
-def fr_iirsos(sr, sos):
-    f, z = signal.sosfreqz(sos, fs=sr)
-    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
-
 # IIR filter coefficient
 # Input: filter parameters
 # Output: filter coefficients
@@ -261,3 +248,16 @@ def sos_bq_highshelf(sr, freq, slope, gain):
     b = np.array([b0, b1, b2])/norm
     a = np.array([1.0, a1/norm, a2/norm])
     return np.array([np.append(b, a)])
+
+# IIR filter frequency response
+# Input: filter coefficients/parameters
+# Output: frequency response i.e. frequency (Hz), magnitude (dB) and phase (rad) arrays.
+# In case of zero division warning: (old_settings =) np.seterr(divide='ignore')
+
+def fr_iir(sr, b, a):
+    f, z = signal.freqz(b, a, fs=sr)
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
+
+def fr_iirsos(sr, sos):
+    f, z = signal.sosfreqz(sos, fs=sr)
+    return f, 20*np.log10(abs(z)), np.unwrap(np.angle(z))
