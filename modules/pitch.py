@@ -63,14 +63,33 @@ def midi2cent(midi1, midi2):
 def ratio2cent(ratio):
     return 1200*np.log2(ratio)
 
+def ratio2semitone(ratio):
+    return 12*np.log2(ratio)
+
+def ratio2time(f_ratio):
+    return np.reciprocal(f_ratio)
+
 def cent2ratio(cent):
     return np.exp2(cent/1200)
+
+def cent2time(cent):
+    return ratio2time(cent2ratio(cent))
+
+def time2ratio(t_ratio):
+    return np.reciprocal(t_ratio)
+
+def time2cent(t_ratio):
+    return ratio2cent(time2ratio(t_ratio))
+
+def semitone2ratio(semitone):
+    return np.exp2(cent/12)
 
 def pitch_shift_st(f, st):
     # pitch shift in semitones (st).
     return f*cent2ratio(st*100)
 
 def pitch_shift_cent(f, cent):
+    # pitch shift in cents.
     return f*cent2ratio(cent)
 
 def interpolate_pitch(f, num):
