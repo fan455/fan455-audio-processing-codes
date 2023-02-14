@@ -127,9 +127,10 @@ class lufs_meter():
         au = au[:self.n_start,...]
         q1, q2 = divmod(au.shape[0], self.hop)
         q3 = self.step - self.hop - q2
-        pad_shape = list(au.shape)
-        pad_shape[0] = q3
-        au = np.append(au, np.zeros(pad_shape), axis=0)
+        if q3 > 0:
+            pad_shape = list(au.shape)
+            pad_shape[0] = q3
+            au = np.append(au, np.zeros(pad_shape), axis=0)
         Mlufs = np.empty(0)
         for i in range(q1):
             au_f = au[i*self.hop: i*self.hop+self.step,...]
