@@ -81,12 +81,12 @@ class lufs_meter():
             self.n_start = int(sr*start_du)
 
         # Calculate prefilter (containing 2 IIR filters) coefficients.
-        if self.sr == 48000:
+        if sr == 48000:
             # coefficients in the ITU documentation.
             self.sos = np.array([[1.53512485958697, -2.69169618940638, 1.19839281085285, \
                                   1.0 , -1.69065929318241, 0.73248077421585], \
                                  [1.0, -2.0, 1.0, 1.0, -1.99004745483398, 0.99007225036621]])
-        elif self.sr == 44100:
+        elif sr == 44100:
             # coefficients calculation by BrechtDeMan.
             self.sos = np.array([[1.5308412300498355, -2.6509799951536985, 1.1690790799210682, \
                                   1.0, -1.6636551132560204, 0.7125954280732254], \
@@ -131,7 +131,7 @@ class lufs_meter():
         pad_shape[0] = q3
         au = np.append(au, np.zeros(pad_shape), axis=0)
         Mlufs = np.empty(0)
-        for i in range(0, q1):
+        for i in range(q1):
             au_f = au[i*self.hop: i*self.hop+self.step,...]
             au_f = signal.sosfilt(self.sos, au_f, axis=0)
             z = np.sum(np.average(np.square(au_f), axis=0))
