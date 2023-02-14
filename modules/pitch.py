@@ -4,7 +4,7 @@ For pianos' 88 notes only. There're 9 octaves (2 incomplete octaves at both ends
 The frequency calculation follows the standard frequencies of musical notes.
 """
 import numpy as np
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import PchipInterpolator
 
 Note = ('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B')
 
@@ -102,9 +102,7 @@ def interpolate_pitch(f, num):
     from scipy.interpolate import CubicSpline
     size = (num + 1)*f.size - num
     n, n_f = np.arange(0, size), np.arange(0, size, num+1)
-    cs = CubicSpline(n_f, f)
-    f_itp = cs(n)
-    return f_itp
+    return PchipInterpolator(n_f, f)(n)
 
 def interpolate_pitch_midi(f, Midi_f, Midi):
     """
@@ -114,5 +112,4 @@ def interpolate_pitch_midi(f, Midi_f, Midi):
     Midi_f: ndarray. The midi array corresponding to the f array.
     Midi: ndarray. The midi array to apply interpolation.
     """
-    cs = CubicSpline(Midi_f, f)
-    return cs(Midi)
+    return PchipInterpolator(Midi_f, f)
