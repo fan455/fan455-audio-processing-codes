@@ -164,6 +164,148 @@ def ihilbert_z(z):
 def ihilbert_ap(am, pm):
     return am*np.cos(pm)
 
+# Short-time Fourier transform
+class stft_class():
+    # STFT and ISTFT using python's class.
+    def __init__(self, sr, T=0.025, overlap=0.75, fft_ratio=1.0, win='blackmanharris', fft_type='m, p', GLA_n_iter=100, GLA_random_phase_type='mono'):
+        """
+        Parameters:
+        sr: int (Hz). Sample rate, ususally 44100 or 48000.
+        T: float (seconds). Time length of a each window. For 48000kHz, T=0.01067 means n=512.
+        overlap: float (ratio between 0 and 1). Overlap ratio between each two adjacent windows.
+        fft_ratio: float (ratio >= 1). The fft ratio relative to T.
+        win: str. Please refer to scipy's window functions. Window functions like kaiser will require a tuple input including additional parameters. e.g. ('kaiser', 14.0)
+        fft_type: str ('m', 'm, p', 'z' or 'zr, zi'). Please refer to the illustration of the returns of self.forward(). If fft_type=='m', istft will use the Griffin-Lim algorithm (GLA).
+        GLA_n_iter: int. The iteration times for GLA.
+        GLA_random_phase_type: str ('mono' or 'stereo'). Whether the starting random phases for GLA are different between 2 stereo channels.
+        """
+        self.sr, self.nperseg, self.noverlap, self.nfft = sr, int(sr*T), int(sr*T*overlap), int(sr*T*fft_ratio)
+        self.nhop = self.nperseg - self.noverlap
+        self.win, self.fft_type = signal.windows.get_window(win, self.nperseg, fftbins=True), fft_type
+        self.GLA_n_iter, self.GLA_random_phase_type = GLA_n_iter, GLA_random_phase_type
+
+    def fw(self, au):
+        """
+        Short-Time Fourier Transform
+
+        Parameters:
+        au: ndarray (dtype = float between -1 and 1). Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. 
+
+        Returns:
+        f: 1d array. As signal.stft returns.
+        t: 1d array. As signal.stft returns.
+        m: if self.fft_type='m'. The magnitudes array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]). PLEASE NOTE that the istft will use phases of a white noise!
+        m, p: if self.fft_type='m, p'. The magnitudes array and phases array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]). The phase range is [-pi, pi].
+        z: if self.fft_type='z'. The complex array of shape (f.size, t.size) or (f.size, t.size, au.shape[-1]).
+        zr, zi: if self.fft_type='zr, zi'. The complex array' real array and imaginary array of shapes (f.size, t.size) or (f.size, t.size, au.shape[-1]).
+        """
+        f, t, z = signal.stft(au, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+        z = z.swapaxes(1, -1)
+        print(f'au.shape = {au.shape}')
+        print(f'f.shape = {f.shape}')
+        print(f't.shape = {t.shape}')
+        print(f'z.shape = {z.shape}')
+        if self.fft_type == 'm':
+            m = np.abs(z)
+            print(f'm.shape = {m.shape}')
+            return f, t, m
+        elif self.fft_type == 'm, p':
+            m, p = np.abs(z), np.unwrap(np.angle(z))
+            print(f'm.shape = {m.shape}')
+            print(f'p.shape = {p.shape}')
+            return f, t, m, p
+        elif self.fft_type == 'z':
+            return f, t, z
+        elif self.fft_type == 'zr, zi':
+            return f, t, z.real, z.imag
+        else:
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
+
+    def bw(self, m=None, p=None, z=None, zr=None, zi=None, nsample=None):
+        """
+        Inverse Short-Time Fourier Transform
+
+        Parameters:
+        in_tup: an ndarray or a tuple containing 2 ndarrays corresponding to self.fft_type. Please refer to the illustration of the returns of self.forward().
+        
+        Returns:
+        au_re: ndarray. Audio array after inverse short-time fourier transform.
+        """
+        if self.fft_type == 'm, p':
+            assert m is not None, f'm is None'
+            assert p is not None, f'p is None'
+            z = np.empty(m.shape, dtype=np.complex128)
+            z.real, z.imag = m*np.cos(p), m*np.sin(p)
+        elif self.fft_type == 'm':
+            assert m is not None, f'm is None'
+            assert nsample is not None, f'nsample is None'
+            p = self.get_random_phase(nsample, m.ndim)
+            z = np.empty(m.shape, dtype=np.complex128)
+            z.real, z.imag = m*np.cos(p), m*np.sin(p)
+            for i in range(0, self.GLA_n_iter):
+                t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
+                f, t, z = signal.stft(au_re, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+                z = z.swapaxes(1, -1)
+                p = np.angle(z)
+                z.real, z.imag = m*np.cos(p), m*np.sin(p)   
+        elif self.fft_type == 'z':
+            assert z is not None, f'z is None'
+        elif self.fft_type == 'zr, zi':
+            assert zr is not None, f'zr is None'
+            assert zi is not None, f'zi is None'
+            z = np.empty(in_tup[0].shape, dtype=np.complex128)
+            z.real, z.imag = zr, zi
+        else:
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
+        t, au_re = signal.istft(z, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, time_axis=1, freq_axis=0)
+        print(f'au_re.shape = {au_re.shape}')
+        return au_re
+
+    def re(self, au):
+        """
+        Reconstruct an audio array using stft and then istft. Please refer to the illustration of the returns of self.forward().
+
+        Parameters:
+        au: ndarray (dtype = float between -1 and 1). Need to have 1 or 2 dimensions like normal single-channel or multi-channel audio. 
+        """          
+        if self.fft_type == 'm, p':
+            f, t, m, p = self.fw(au)
+            au_re = self.bw(m=m, p=p)
+        elif self.fft_type == 'm':
+            # Using the Griffin-Lim algorithm.
+            f, t, m = self.fw(au)
+            nsample = au.shape[0]
+            print(f'nsample = {nsample}')
+            au_re = self.bw(m=m, nsample=nsample)
+        elif self.fft_type == 'z':
+            f, t, z = self.fw(au)
+            au_re = self.bw(z=z)
+        elif self.fft_type == 'zr, zi':
+            f, t, zr, zi = self.fw(au)
+            au_re = self.bw(zr=zr, zi=zi)
+        else:
+            raise ValueError('Parameter self.fft_type has to be "m", "m, p", "z" or "zr, zi".')
+        return au_re        
+
+    def get_random_phase(self, nsample, m_ndim):
+        if m_ndim == 3:
+            if self.GLA_random_phase_type == 'mono':
+                noise = 0.5*np.random.uniform(-1, 1, nsample)
+                noise = np.stack((noise, noise), axis=-1)
+            elif self.GLA_random_phase_type == 'stereo':
+                noise = 0.5*np.random.uniform(-1, 1, (nsample, 2))
+            else:
+                raise ValueError('self.GLA_random_phase_type != "mono" or "stereo"')
+        elif m_ndim == 2:
+            noise = 0.5*np.random.uniform(-1, 1, nsample)
+        else:
+            raise ValueError('m_ndim != 2 or 3')
+        f_noise, t_noise, z_noise = signal.stft(noise, fs=self.sr, window=self.win, nperseg=self.nperseg, noverlap=self.noverlap, nfft=self.nfft, axis=0)
+        z_noise = z_noise.swapaxes(1, -1)
+        p_noise = np.angle(z_noise*np.exp(0.5*np.pi*1.0j))
+        print(f'p_noise.shape = {p_noise.shape}')
+        return p_noise    
+
 # generate test signal
 def get_sinewave(sr, du=1.0, f=440, phase=0, A=0.3, stereo=False, ls=None, ts=None):
     """
@@ -292,3 +434,44 @@ def get_pitch_given(au, sr, du=None, given_freq=440, given_cent=100, cent_step=1
     pitch = F[np.argmax(M)]
     print(f'{round(pitch, 2)}Hz is the detected pitch given {round(given_freq, 2)}Hz, {round(given_cent, 2)} cent band and {np.round(cent_step, 2)} cent step.')
     return pitch
+
+# Frame audio
+def frame_audio(au, sr, T=0.4, overlap=0.75, win='hamming'):
+    """
+    Parameters
+    au: ndarray. Needs to have mono shape (samples_num, ) or multi-channel shape (samples_num, channels_num)
+    sr: float (Hz). Sample rate of input audio array.
+    T: float (seconds). Time length of each window.
+    overlap: float, proportion. Proportion of overlapping between windows.
+    win: str or tuple. The window to apply to every frame. No need to provide window size. Please refer to signal.get_windows.
+
+    Returns
+    au_f: ndarray. Framed audio with mono shape (window_num, samples) or multi-channel shape (window_num, samples_num, channels_num).
+    """
+    step, hop = int(sr*T), int(sr*T*(1-overlap))
+    q1, q2 = divmod(au.shape[0], hop)
+    q3 = step - hop - q2
+    if q3 > 0:
+        pad_shape = list(au.shape)
+        pad_shape[0] = q3
+        au = np.append(au, np.zeros(pad_shape), axis=0)
+    au = np.expand_dims(au, axis=0)
+    au_f = au[:, 0:step,...]
+    for i in range(1, q1):
+        au_f = np.append(au_f, au[:, i*hop:i*hop+step,...], axis=0)
+    if win:
+        win_shape = [1]*au.ndim
+        win_shape[1] = step
+        au_f *= signal.get_window(win, step).reshape(win_shape)
+    return au_f
+
+def unframe_audio(au_f, sr, T=0.4, overlap=0.75, win='hamming'):
+    step, hop = int(sr*T), int(sr*T*(1-overlap))
+    if win:
+        win_shape = [1]*au_f.ndim
+        win_shape[1] = step
+        au_f /= signal.get_window(win, step).reshape(win_shape)
+    au = au_f[0, :,...]
+    for i in range(1, au_f.shape[0]):
+        au = np.append(au, au_f[i, -hop:,...], axis=0)
+    return au
