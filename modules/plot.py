@@ -34,12 +34,12 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
     N = nrows*ncols
     fig, ax = plt.subplots(nrows, ncols, facecolor=bgcolor)
     if subtitle:
-        if type(subtitle) == str:
+        if isinstance(subtitle, str):
             for i in range(N):
                 ax[i].set_title(f'{subtitle} {i+1}', fontsize='medium')     
                 ax[i].set_facecolor(bgcolor)
                 ax[i].plot(x, y[i, :], **kwargs)
-        elif type(subtitle) == list or type(subtitle) == tuple:
+        elif isinstance(subtitle, (list, tuple)):
             assert len(subtitle) == N
             for i in range(N):
                 ax[i].set_title(subtitle[i], fontsize='medium')     
@@ -62,6 +62,7 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
 
 def plot_itp(y, x, points, title='title', xlabel='x', ylabel='y', \
              grid=True, bgcolor='#D1DDC5', **kwargs):
+    # Plot for interpolation.
     # points is a 2d array with shape(n_points, 2), that will be annotated.
     # points = np.array([[x1, y1], [x2, y2],..., [xn, yn]])
     fig, ax = plt.subplots(facecolor=bgcolor)
@@ -204,19 +205,22 @@ def plot_modes(Modes, t, au=None, res=None, compare_with_noise=True, title=None,
     plt.ylabel(ylabel, loc='center')
     plt.show()
 
-def plot_au_mono(au, sr, title='title', grid=True, bgcolor='#D1DDC5'):
+def plot_au_mono(au, sr, title='title', grid=True, bgcolor='#D1DDC5', **kwargs):
     """
     Plot mono audio array.
-    au: 1d audio array.
+    au: 1d audio array of shape (nsamples,).
     sr: sample rate.
     """
-    t = np.arange(au.size)/sr
-    fig, ax = plt.subplots(facecolor=bgcolor)
-    ax.set_facecolor(bgcolor)
-    ax.plot(t, au)
-    plt.title(title)
-    plt.xlabel('time', loc='right')
-    plt.ylabel('amplitude', loc='center')
-    if grid:
-        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
-    plt.show()
+    t = np.arange(au.shape[0])/sr
+    plot(y, t, title=title, xlabel='time (s)', ylabel='amplitude', grid=grid, \
+         bgcolor=bgcolor, **kwargs):
+
+def plot_au_stereo(au, sr, title='title', grid=True, bgcolor='#D1DDC5', **kwargs):
+    """
+    Plot stereo audio array.
+    au: 2d audio array of shape (nsamples, 2).
+    sr: sample rate.
+    """
+    t = np.arange(au.shape[0])/sr
+    subplots(y, t, nrows=2, ncols=1, yaxis=0, title=title, subtitle=('left channel', 'right channel'), \
+             xlabel='time (s)', ylabel='amplitude', grid=True, bgcolor=bgcolor, **kwargs):
