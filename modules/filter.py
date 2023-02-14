@@ -6,8 +6,8 @@ from scipy import signal
 # IIR filter
 # Input: signal and filter coefficients/parameters
 # Output: filtered signal
-# Funtions with "sos" uses second-order sections for numerical stability.
-# Funtions with "2" uses fordward-backward filtering to realize zero phase.
+# Funtions with "sos" in their names use second-order sections (sos) for numerical stability.
+# Funtions with "2" in their names use fordward-backward filtering to realize zero phase.
 
 def iir(y, b, a, axis=0):
     return signal.lfilter(b, a, y, axis=axis)
@@ -21,8 +21,18 @@ def butter(y, sr, btype, order, freq, axis=0):
     b, a = ba_butter(sr, btype, order, freq)
     return iir(y, b, a, axis=axis)
 
+def bessel(y, sr, btype, order, freq, axis=0):
+    # N (lp or hp) or 2*N (bp or bs) -order Bessel filter
+    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
+    b, a = ba_bessel(sr, btype, order, freq)
+    return iir(y, b, a, axis=axis)
+
 def buttersos(y, sr, btype, order, freq, axis=0):
     sos = sos_butter(sr, btype, order, freq)
+    return iirsos(y, sos, axis=axis)
+
+def besselsos(y, sr, btype, order, freq, axis=0):
+    sos = sos_bessel(sr, btype, order, freq)
     return iirsos(y, sos, axis=axis)
 
 def bq(y, sr, sos_bq_type, axis=0, **kwargs):
@@ -60,8 +70,16 @@ def butter2(y, sr, btype, order, freq, axis=0):
     b, a = ba_butter(sr, btype, order, freq)
     return iir2(y, b, a, axis=axis)
 
+def bessel2(y, sr, btype, order, freq, axis=0):
+    b, a = ba_bessel(sr, btype, order, freq)
+    return iir2(y, b, a, axis=axis)
+
 def buttersos2(y, sr, btype, order, freq, axis=0):
     sos = sos_butter(sr, btype, order, freq)
+    return iirsos2(y, sos, axis=axis)
+
+def besselsos2(y, sr, btype, order, freq, axis=0):
+    sos = sos_bessel(sr, btype, order, freq)
     return iirsos2(y, sos, axis=axis)
 
 def bq2(y, sr, sos_bq_type, axis=0, **kwargs):
@@ -109,11 +127,23 @@ def ba_butter(sr, btype, order, freq):
     # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
     return signal.butter(order, freq, btype=btype, fs=sr)
 
+def ba_bessel(sr, btype, order, freq):
+    # Get the b and a parameters of a bessel IIR filter.
+    # signal.butter
+    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
+    return signal.bessel(order, freq, btype=btype, fs=sr)
+
 def sos_butter(sr, btype, order, freq):
     # Get the sos of a butterworth IIR filter.
     # signal.butter
     # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
     return signal.butter(order, freq, btype=btype, output='sos', fs=sr)
+
+def sos_bessel(sr, btype, order, freq):
+    # Get the sos of a bessel IIR filter.
+    # signal.butter
+    # btype: 'lowpass', 'highpass', 'bandpass', 'bandstop'
+    return signal.bessel(order, freq, btype=btype, output='sos', fs=sr)
 
 def sos_iir(sr, ftype, btype, order, freq, rp=None, rs=None):
     # Get the sos of certain types of IIR filter.
@@ -170,7 +200,7 @@ def sos_bq_highpass(sr, freq, Q):
     return np.array([np.append(b, a)])
 
 def sos_bq_bandpass(sr, freq, bw):
-    # biquad band pass filter with constant 0 dB peak gain.
+    # biquad band pass filter with a constant 0 dB peak gain.
     w = 2*np.pi*freq/sr
     cosw, sinw = np.cos(w), np.sin(w)
     alpha = sinw*np.sinh(0.5*np.log(2)*bw*w/sinw)
