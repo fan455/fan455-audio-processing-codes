@@ -239,7 +239,7 @@ def plot_au_mono(au, sr, title='title', grid=True, bgcolor='#D1DDC5', **kwargs):
     """
     t = np.arange(au.shape[0])/sr
     plot(y, t, title=title, xlabel='time (s)', ylabel='amplitude', grid=grid, \
-         bgcolor=bgcolor, **kwargs):
+         bgcolor=bgcolor, **kwargs)
 
 def plot_au_stereo(au, sr, title='title', grid=True, bgcolor='#D1DDC5', **kwargs):
     """
@@ -249,4 +249,4 @@ def plot_au_stereo(au, sr, title='title', grid=True, bgcolor='#D1DDC5', **kwargs
     """
     t = np.arange(au.shape[0])/sr
     subplots(y, t, nrows=2, ncols=1, yaxis=0, title=title, subtitle=('left channel', 'right channel'), \
-             xlabel='time (s)', ylabel='amplitude', grid=True, bgcolor=bgcolor, **kwargs):
+             xlabel='time (s)', ylabel='amplitude', grid=True, bgcolor=bgcolor, **kwargs)
