@@ -21,7 +21,33 @@ def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#
     if grid:
         ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
-  
+
+def plot_multi(y, x, yaxis=1, linelabels=None, kwargslist=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5'):
+    # Plot multiple lines in the same graph.
+    # x is a 1d array with shape (npoints,).
+    # y is a 2d array with shape (N, npoints) if yaxis=1, or shape (npoints, N) if yaxis=0.
+    # kwargslist is a list containing N dictionaries with kwargs sent to ax.plot() corresponding to the N lines.
+    # linelabels is a list containing N strings setting the labels of lines.
+    if yaxis == 1:
+        y = np.swapaxes(y, 0, 1)
+    N = y.shape[1]
+    fig, ax = plt.subplots(facecolor=bgcolor)
+    ax.set_facecolor(bgcolor)
+    if linelabels is None:
+        linelabels = list(f'y{i}' for i in range(N))
+    if kwargslist:
+        for i in range(N):
+            ax.plot(x, y, label=linelabels[i], **kwargslist[i])
+    else:
+        for i in range(N):
+            ax.plot(x, y, label=linelabels[i])
+    plt.title(title)
+    plt.xlabel(xlabel, loc='right')
+    plt.ylabel(ylabel, loc='center')
+    if grid:
+        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
+    plt.show()
+    
 def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
              xlabel='x', ylabel='y', grid=False, bgcolor='#D1DDC5', **kwargs):
     # x is a 1d array, y is a 2d array with shape(n_subplots, x.size).
