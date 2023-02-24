@@ -9,6 +9,8 @@ def itpmono(x, px, py, axis=-1):
 
 def ols0v(y):
     """
+    0-variate OLS
+
     Parameters
     y: 1d array of shape (nsamples,)
 
@@ -21,6 +23,8 @@ def ols0v(y):
 
 def ols1v(y, x):
     """
+    1-variate OLS
+
     Parameters
     y: 1d array of shape (nsamples,)
     x: 1d array of shape (nsamples,)
@@ -36,6 +40,8 @@ def ols1v(y, x):
     
 def olsmv(y, X):
     """
+    multi-variate OLS
+    
     Parameters
     y: 1d array of shape (nsamples,)
     X: 2d array of shape (nsamples, nx)
