@@ -28,19 +28,19 @@ def plot_multi(y, x, yaxis=1, linelabels=None, kwargslist=None, title='title', x
     # y is a 2d array with shape (N, npoints) if yaxis=1, or shape (npoints, N) if yaxis=0.
     # kwargslist is a list containing N dictionaries with kwargs sent to ax.plot() corresponding to the N lines.
     # linelabels is a list containing N strings setting the labels of lines.
-    if yaxis == 1:
+    if yaxis == 0:
         y = np.swapaxes(y, 0, 1)
-    N = y.shape[1]
+    N = y.shape[0]
     fig, ax = plt.subplots(facecolor=bgcolor)
     ax.set_facecolor(bgcolor)
     if linelabels is None:
         linelabels = list(f'y{i}' for i in range(N))
     if kwargslist:
         for i in range(N):
-            ax.plot(x, y, label=linelabels[i], **kwargslist[i])
+            ax.plot(x, y[i, :], label=linelabels[i], **kwargslist[i])
     else:
         for i in range(N):
-            ax.plot(x, y, label=linelabels[i])
+            ax.plot(x, y[i, :], label=linelabels[i])
     plt.title(title)
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
