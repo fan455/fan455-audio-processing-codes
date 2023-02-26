@@ -22,12 +22,14 @@ def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#
         ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
 
-def plot_multi(y, x, yaxis=1, linelabels=None, kwargslist=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5'):
+def plot_multi(y, x, yaxis=1, linelabels=None, kwargslist=None, legendkwargs=None, \
+               title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5'):
     # Plot multiple lines in the same graph.
     # x is a 1d array with shape (npoints,).
     # y is a 2d array with shape (N, npoints) if yaxis=1, or shape (npoints, N) if yaxis=0.
     # kwargslist is a list containing N dictionaries with kwargs sent to ax.plot() corresponding to the N lines.
     # linelabels is a list containing N strings setting the labels of lines.
+    # legendkwargs is a dictionary of legend parameters, sent to ax.legend()
     if yaxis == 0:
         y = np.swapaxes(y, 0, 1)
     N = y.shape[0]
@@ -37,10 +39,14 @@ def plot_multi(y, x, yaxis=1, linelabels=None, kwargslist=None, title='title', x
         linelabels = list(f'y{i}' for i in range(N))
     if kwargslist:
         for i in range(N):
-            ax.plot(x, y[i, :], label=linelabels[i], **kwargslist[i])
+            ax.plot(x, y[i, :], **kwargslist[i])
     else:
         for i in range(N):
-            ax.plot(x, y[i, :], label=linelabels[i])
+            ax.plot(x, y[i, :])
+    if legendkwargs:
+        ax.legend(linelabels, **legendkwargs)
+    else:
+        ax.legend(linelabels)
     plt.title(title)
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
