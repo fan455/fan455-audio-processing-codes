@@ -92,6 +92,43 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
     plt.ylabel(ylabel, loc='center')
     plt.show()
 
+def plot_sc(y, x, x_trtime, yaxis=1, linelabels=['actual', 'synthetic'], \
+            kwargslist=[{}, dict(linestyle='--',color='green')], \
+            vlinekwargs=dict(color='grey', lw=2.0, ls='--'), \
+            legendkwargs=dict(loc='lower left'), title='synthetic control', \
+            xlabel='time', ylabel='y', grid=True, bgcolor='#D1DDC5'):
+    # Plot actual and synthetic control lines in the same graph.
+    # x is a 1d array with shape (npoints,).
+    # y is a 2d array with shape (N, npoints) if yaxis=1, or shape (npoints, N) if yaxis=0.
+    # x_trtime (the start time of treatment), minus 1, is the x coordinate to plot a vertical line.
+    # kwargslist is a list containing N dictionaries with kwargs sent to ax.plot() corresponding to the N lines.
+    # linelabels is a list containing N strings setting the labels of lines.
+    # legendkwargs is a dictionary of legend parameters, sent to ax.legend()    
+    if yaxis == 0:
+        y = np.swapaxes(y, 0, 1)
+    N = y.shape[0]
+    fig, ax = plt.subplots(facecolor=bgcolor)
+    ax.set_facecolor(bgcolor)
+    if linelabels is None:
+        linelabels = list(f'y{i}' for i in range(N))
+    if kwargslist:
+        for i in range(N):
+            ax.plot(x, y[i, :], **kwargslist[i])
+    else:
+        for i in range(N):
+            ax.plot(x, y[i, :])
+    if legendkwargs:
+        ax.legend(linelabels, **legendkwargs)
+    else:
+        ax.legend(linelabels)
+    plt.axvline(x_trtime-1, **vlinekwargs)
+    plt.title(title)
+    plt.xlabel(xlabel, loc='right')
+    plt.ylabel(ylabel, loc='center')
+    if grid:
+        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
+    plt.show()
+ 
 def plot_itp(y, x, points, title='title', xlabel='x', ylabel='y', \
              grid=True, bgcolor='#D1DDC5', **kwargs):
     # Plot for interpolation.
