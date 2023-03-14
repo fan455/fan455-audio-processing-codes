@@ -57,14 +57,13 @@ def plot_multi(y, x, yaxis=1, linelabels=None, kwargslist=None, legendkwargs=Non
 def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
              xlabel='x', ylabel='y', grid=False, bgcolor='#D1DDC5', **kwargs):
     # x is a 1d array, y is a 2d array with shape(n_subplots, x.size).
-    assert x.ndim == 1 and y.ndim == 2
     if yaxis == 0:
         y = np.swapaxes(y, 0, 1)
-    if nrows == None:
+    if nrows is None:
         nrows = y.shape[0]
-    assert nrows*ncols == y.shape[0]
-    N = nrows*ncols
+    N = y.shape[0]
     fig, ax = plt.subplots(nrows, ncols, facecolor=bgcolor)
+    ax = ax.reshape(ax.size)
     if subtitle:
         if isinstance(subtitle, str):
             for i in range(N):
@@ -80,17 +79,9 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
         else:
             raise ValueError('Your subtitle type {type(subtitle)} is not supported.')
     else:
-        ax[i].set_facecolor(bgcolor)
-        ax[i].plot(x, y[i, :], **kwargs)
-
-    if grid:
         for i in range(N):
-            ax[i].grid(color='grey', linewidth='0.75', linestyle='-.')
-    if title:
-        fig.suptitle(title)
-    plt.xlabel(xlabel, loc='right')
-    plt.ylabel(ylabel, loc='center')
-    plt.show()
+            ax[i].set_facecolor(bgcolor)
+            ax[i].plot(x, y[i, :], **kwargs)
 
 def plot_sc(y, x, x_trtime, yaxis=1, linelabels=['actual', 'synthetic'], \
             kwargslist=[{}, dict(linestyle='--',color='green')], \
