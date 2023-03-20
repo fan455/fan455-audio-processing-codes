@@ -1,13 +1,18 @@
-"""
-Plot by wrapping matplotlib
-"""
+# fast plot by wrapping matplotlib
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 #plt.rcParams['figure.dpi'] = 150
 #plt.rcParams['savefig.dpi'] = 150
+#plt.rcParams['font.family'] ='sans-serif'
+#plt.rcParams['font.sans-serif'] = ['SimHei']
+#plt.rcParams['axes.unicode_minus'] = False
+#plt.rcParams.update({'font.size': 11.5})
 
-def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5', **kwargs):
+def plot(y, x=None, title='title', xlabel='x', ylabel='y', xtick=None, ytick=None, \
+         xticklabel=None, yticklabel=None, xtick_kwargs=None, ytick_kwargs=None, \
+         grid=True, bgcolor='#D1DDC5', **kwargs):
     # x and y are both 1d arrays with the same size.
     fig, ax = plt.subplots(facecolor=bgcolor)
     ax.set_facecolor(bgcolor)
@@ -15,6 +20,21 @@ def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#
         ax.plot(y, **kwargs)
     else:
         ax.plot(x, y, **kwargs)
+
+    if xtick is not None:
+        ax.set_xticks(xtick)
+        if xticklabel is not None:
+            ax.set_xticklabels(xticklabel)
+        if xtick_kwargs is not None:
+            ax.tick_params(axis='x', **xtick_kwargs)
+
+    if ytick is not None:
+        ax.set_yticks(ytick)
+        if yticklabel is not None:
+            ax.set_yticklabels(yticklabel)
+        if ytick_kwargs is not None:
+            ax.tick_params(axis='y', **ytick_kwargs)
+
     plt.title(title)
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
@@ -23,7 +43,9 @@ def plot(y, x=None, title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#
     plt.show()
 
 def plot_multi(y, x, yaxis=1, linelabels=None, kwargslist=None, legendkwargs=None, \
-               title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5'):
+               title='title', xlabel='x', ylabel='y', xtick=None, ytick=None, \
+               xticklabel=None, yticklabel=None, xtick_kwargs=None, ytick_kwargs=None, \
+               grid=True, bgcolor='#D1DDC5'):
     # Plot multiple lines in the same graph.
     # x is a 1d array with shape (npoints,).
     # y is a 2d array with shape (N, npoints) if yaxis=1, or shape (npoints, N) if yaxis=0.
@@ -35,18 +57,36 @@ def plot_multi(y, x, yaxis=1, linelabels=None, kwargslist=None, legendkwargs=Non
     N = y.shape[0]
     fig, ax = plt.subplots(facecolor=bgcolor)
     ax.set_facecolor(bgcolor)
+    
     if linelabels is None:
         linelabels = list(f'y{i}' for i in range(N))
+        
     if kwargslist:
         for i in range(N):
             ax.plot(x, y[i, :], **kwargslist[i])
     else:
         for i in range(N):
             ax.plot(x, y[i, :])
+            
     if legendkwargs:
         ax.legend(linelabels, **legendkwargs)
     else:
         ax.legend(linelabels)
+
+    if xtick is not None:
+        ax.set_xticks(xtick)
+        if xticklabel is not None:
+            ax.set_xticklabels(xticklabel)
+        if xtick_kwargs is not None:
+            ax.tick_params(axis='x', **xtick_kwargs)
+
+    if ytick is not None:
+        ax.set_yticks(ytick)
+        if yticklabel is not None:
+            ax.set_yticklabels(yticklabel)
+        if ytick_kwargs is not None:
+            ax.tick_params(axis='y', **ytick_kwargs)
+
     plt.title(title)
     plt.xlabel(xlabel, loc='right')
     plt.ylabel(ylabel, loc='center')
@@ -83,11 +123,28 @@ def subplots(y, x, nrows=None, ncols=1, yaxis=1, title=None, subtitle=None, \
             ax[i].set_facecolor(bgcolor)
             ax[i].plot(x, y[i, :], **kwargs)
 
+    nEmpty = nrows*ncols - N
+    if nEmpty > 0:
+        for i in range(nEmpty):
+            ax[-nEmpty].set_facecolor(bgcolor)
+            
+    if grid:
+        for i in range(N):
+            ax[i].grid(color='grey', linewidth='0.75', linestyle='-.')
+    if title:
+        fig.suptitle(title)
+    plt.xlabel(xlabel, loc='right')
+    plt.ylabel(ylabel, loc='center')
+    plt.show()
+
 def plot_sc(y, x, x_trtime, yaxis=1, linelabels=['actual', 'synthetic'], \
             kwargslist=[{}, dict(linestyle='--',color='green')], \
             vlinekwargs=dict(color='grey', lw=2.0, ls='--'), \
             legendkwargs=dict(loc='lower left'), title='synthetic control', \
-            xlabel='time', ylabel='y', grid=True, bgcolor='#D1DDC5'):
+            xlabel='time', ylabel='y', xtick=None, ytick=None, \
+            xticklabel=None, yticklabel=None, \
+            xtick_kwargs=dict(labelsize=9, labelrotation=45), ytick_kwargs=None, \
+            grid=True, bgcolor='#D1DDC5'):
     # Plot actual and synthetic control lines in the same graph.
     # x is a 1d array with shape (npoints,).
     # y is a 2d array with shape (N, npoints) if yaxis=1, or shape (npoints, N) if yaxis=0.
@@ -100,18 +157,36 @@ def plot_sc(y, x, x_trtime, yaxis=1, linelabels=['actual', 'synthetic'], \
     N = y.shape[0]
     fig, ax = plt.subplots(facecolor=bgcolor)
     ax.set_facecolor(bgcolor)
+    
     if linelabels is None:
         linelabels = list(f'y{i}' for i in range(N))
+        
     if kwargslist:
         for i in range(N):
             ax.plot(x, y[i, :], **kwargslist[i])
     else:
         for i in range(N):
             ax.plot(x, y[i, :])
+            
     if legendkwargs:
         ax.legend(linelabels, **legendkwargs)
     else:
         ax.legend(linelabels)
+
+    if xtick is not None:
+        ax.set_xticks(xtick)
+        if xticklabel is not None:
+            ax.set_xticklabels(xticklabel)
+        if xtick_kwargs is not None:
+            ax.tick_params(axis='x', **xtick_kwargs)
+
+    if ytick is not None:
+        ax.set_yticks(ytick)
+        if yticklabel is not None:
+            ax.set_yticklabels(yticklabel)
+        if ytick_kwargs is not None:
+            ax.tick_params(axis='y', **ytick_kwargs)
+        
     plt.axvline(x_trtime-1, **vlinekwargs)
     plt.title(title)
     plt.xlabel(xlabel, loc='right')
@@ -137,29 +212,7 @@ def plot_itp(y, x, points, title='title', xlabel='x', ylabel='y', \
     if grid:
         ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
-    
-def plot_xint(y, x=None, title='title', xlabel='x', ylabel='y', \
-              grid=True, annotate_x=False, bgcolor='#D1DDC5'):
-    fig, ax = plt.subplots(facecolor=bgcolor)
-    ax.set_facecolor(bgcolor)
-    if x is None:
-        x = np.arange(y.size)
-    else:
-        assert x.dtype == int
-    ax.plot(x, y, color='tab:grey', linestyle='--', \
-            marker='.', markersize=12.0, mec='black', mfc='black')
-    if annotate_x:
-        for i in range(x.size):
-            plt.annotate(f'{x[i]}', (x[i], y[i]), fontsize='small')
-    else:
-        pass
-    plt.title(title)
-    plt.xlabel(xlabel, loc='right')
-    plt.ylabel(ylabel, loc='center')
-    if grid:
-        ax.grid(color='grey', linewidth='0.75', linestyle='-.')
-    plt.show()
-  
+
 def plot_scale(y, x, xscale='log', yscale=None, xscale_kwargs=None, yscale_kwargs=None, \
                title='title', xlabel='x', ylabel='y', grid=True, bgcolor='#D1DDC5', **kwargs):
     # Plot with x and/or y axis scaled. By default x is scaled by "log10".
@@ -185,6 +238,7 @@ def plot_scale(y, x, xscale='log', yscale=None, xscale_kwargs=None, yscale_kwarg
     if grid:
         ax.grid(color='grey', linewidth='0.75', linestyle='-.')
     plt.show()
+
 
 def plot_fscale(y, x, faxis='x', base=10, linthresh=10, linscale=0.25, subs=None, \
                 title='title', xlabel='frequency (Hz)', ylabel='magnitude', \
